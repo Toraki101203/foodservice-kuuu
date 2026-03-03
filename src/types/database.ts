@@ -35,8 +35,14 @@ export interface Restaurant {
     phone: string | null;
     business_hours: BusinessHours | null;
     categories: string[];
+    genre: string;
     plan_type: PlanType;
     is_verified: boolean;
+    is_open: boolean;
+    status?: string | null;
+    atmosphere_photos?: string[] | null;
+    price_range?: string | null;
+    closed_days?: string | null;
     created_at: string;
 }
 
@@ -93,6 +99,9 @@ export interface Post {
     like_count: number;
     comment_count: number;
     created_at: string;
+    image_url?: string | null;
+    caption?: string | null;
+    post_date?: string | null;
     // リレーション
     user?: User;
     restaurant?: Restaurant;
@@ -130,6 +139,9 @@ export interface Reservation {
     note: string | null;
     status: ReservationStatus;
     created_at: string;
+    reservation_date?: string | null;
+    reservation_time?: string | null;
+    shop_id?: string | null;
     // リレーション
     user?: User;
     restaurant?: Restaurant;
@@ -231,4 +243,27 @@ export interface Notification {
     data: Record<string, unknown> | null;
     is_read: boolean;
     created_at: string;
+}
+
+/**
+ * 互換性のための Supabase Database Wrapper
+ */
+export interface Database {
+    public: {
+        Tables: {
+            shops: { Row: Restaurant };
+            profiles: { Row: User };
+            posts: { Row: Post };
+            reservations: { Row: Reservation };
+            favorites: { Row: Favorite };
+            coupons: { Row: any };
+            shop_courses: { Row: any };
+            post_likes: { Row: PostLike };
+            comments: { Row: Comment };
+            follows: { Row: Follow };
+            restaurant_images: { Row: RestaurantImage };
+            menus: { Row: Menu };
+            notifications: { Row: Notification };
+        };
+    };
 }

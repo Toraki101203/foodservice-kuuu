@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Home, Map, PlusCircle, Bell, User } from "lucide-react";
+import { Home, Map, Search, Heart, User } from "lucide-react";
 
 const navItems = [
     { href: "/home", icon: Home, label: "ホーム" },
-    { href: "/discover", icon: Map, label: "発見" },
-    { href: "/posts/new", icon: PlusCircle, label: "投稿" },
-    { href: "/notifications", icon: Bell, label: "通知" },
-    { href: "/profile", icon: User, label: "マイページ" },
+    { href: "/discover", icon: Map, label: "見つける" },
+    { href: "/search", icon: Search, label: "検索" },
+    { href: "/favorites", icon: Heart, label: "お気に入り" },
+    { href: "/mypage", icon: User, label: "マイページ" },
 ];
 
 /**
@@ -25,7 +25,6 @@ export function BottomNav() {
             <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
                 {navItems.map(({ href, icon: Icon, label }) => {
                     const isActive = pathname === href || pathname.startsWith(`${href}/`);
-                    const isCreatePost = href === "/posts/new";
 
                     return (
                         <Link
@@ -39,16 +38,8 @@ export function BottomNav() {
                             )}
                             aria-label={label}
                         >
-                            {isCreatePost ? (
-                                <div className="flex size-10 items-center justify-center rounded-full bg-orange-500 text-white">
-                                    <Icon className="size-5" />
-                                </div>
-                            ) : (
-                                <>
-                                    <Icon className="size-6" strokeWidth={isActive ? 2.5 : 2} />
-                                    <span className="text-xs">{label}</span>
-                                </>
-                            )}
+                            <Icon className="size-6" strokeWidth={isActive ? 2.5 : 2} />
+                            <span className="text-xs">{label}</span>
                         </Link>
                     );
                 })}

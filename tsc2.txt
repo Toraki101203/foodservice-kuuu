@@ -1,0 +1,24 @@
+﻿src/app/admin/page.tsx(291,90): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/mypage/page.tsx(7,21): error TS2307: Cannot find module 'react-easy-crop' or its corresponding type declarations.
+src/app/mypage/page.tsx(70,28): error TS18049: 'r.reservation_date' is possibly 'null' or 'undefined'.
+src/app/mypage/page.tsx(75,28): error TS18049: 'r.reservation_date' is possibly 'null' or 'undefined'.
+src/app/mypage/page.tsx(89,99): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/mypage/page.tsx(90,91): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/app/shop-dashboard/posts/page.tsx(303,37): error TS2322: Type 'string | null | undefined' is not assignable to type 'string | StaticImport'.
+  Type 'undefined' is not assignable to type 'string | StaticImport'.
+src/components/timeline/PostCard.tsx(74,37): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/timeline/ShopMap.tsx(4,63): error TS2307: Cannot find module '@react-google-maps/api' or its corresponding type declarations.
+src/components/timeline/ShopMap.tsx(38,27): error TS2503: Cannot find namespace 'google'.
+src/components/timeline/ShopMap.tsx(71,55): error TS2503: Cannot find namespace 'google'.
+src/components/timeline/ShopMap.tsx(75,39): error TS2339: Property 'google' does not exist on type 'Window & typeof globalThis'.
+src/components/timeline/ShopMap.tsx(85,58): error TS2503: Cannot find namespace 'google'.
+src/components/timeline/ShopMap.tsx(138,52): error TS2339: Property 'google' does not exist on type 'Window & typeof globalThis'.
+src/lib/format.ts(1,46): error TS2307: Cannot find module 'date-fns' or its corresponding type declarations.
+src/lib/format.ts(2,20): error TS2307: Cannot find module 'date-fns/locale' or its corresponding type declarations.
+src/lib/stripe/client.ts(1,28): error TS2307: Cannot find module '@stripe/stripe-js' or its corresponding type declarations.
+src/lib/stripe/server.ts(1,20): error TS2307: Cannot find module 'stripe' or its corresponding type declarations.
+sync_stripe.ts(1,20): error TS2307: Cannot find module 'stripe' or its corresponding type declarations.

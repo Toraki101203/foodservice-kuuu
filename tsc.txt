@@ -1,0 +1,48 @@
+﻿src/app/admin/page.tsx(278,125): error TS2339: Property 'status' does not exist on type 'Restaurant'.
+src/app/admin/page.tsx(283,55): error TS2339: Property 'status' does not exist on type 'Restaurant'.
+src/app/admin/page.tsx(291,95): error TS2339: Property 'status' does not exist on type 'Restaurant'.
+src/app/admin/page.tsx(292,113): error TS2339: Property 'status' does not exist on type 'Restaurant'.
+src/app/admin/page.tsx(297,58): error TS2339: Property 'status' does not exist on type 'Restaurant'.
+src/app/admin/page.tsx(300,55): error TS2339: Property 'status' does not exist on type 'Restaurant'.
+src/app/favorites/page.tsx(104,39): error TS2339: Property 'atmosphere_photos' does not exist on type 'Restaurant'.
+src/app/favorites/page.tsx(104,65): error TS2339: Property 'atmosphere_photos' does not exist on type 'Restaurant'.
+src/app/favorites/page.tsx(106,51): error TS2339: Property 'atmosphere_photos' does not exist on type 'Restaurant'.
+src/app/mypage/page.tsx(70,30): error TS2551: Property 'reservation_date' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/app/mypage/page.tsx(75,30): error TS2551: Property 'reservation_date' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/app/mypage/page.tsx(89,101): error TS2551: Property 'reservation_time' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/app/mypage/page.tsx(90,93): error TS2551: Property 'reservation_time' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/app/mypage/page.tsx(339,52): error TS2339: Property 'shop_id' does not exist on type 'Reservation'.
+src/app/mypage/page.tsx(346,50): error TS2551: Property 'reservation_time' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/app/mypage/page.tsx(349,50): error TS2551: Property 'reservation_date' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/app/mypage/page.tsx(387,52): error TS2339: Property 'shop_id' does not exist on type 'Reservation'.
+src/app/mypage/page.tsx(393,46): error TS2551: Property 'reservation_date' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/app/mypage/page.tsx(399,121): error TS2551: Property 'reservation_time' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/app/search/page.tsx(96,39): error TS2339: Property 'atmosphere_photos' does not exist on type 'Restaurant'.
+src/app/search/page.tsx(96,65): error TS2339: Property 'atmosphere_photos' does not exist on type 'Restaurant'.
+src/app/search/page.tsx(98,51): error TS2339: Property 'atmosphere_photos' does not exist on type 'Restaurant'.
+src/app/shop-dashboard/page.tsx(329,46): error TS2551: Property 'reservation_time' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/app/shop-dashboard/posts/page.tsx(303,47): error TS2339: Property 'image_url' does not exist on type 'Post'.
+src/app/shop-dashboard/posts/page.tsx(304,47): error TS2339: Property 'caption' does not exist on type 'Post'.
+src/app/shop-dashboard/posts/page.tsx(312,43): error TS2339: Property 'post_date' does not exist on type 'Post'.
+src/app/shop-dashboard/reservations/page.tsx(235,42): error TS2551: Property 'reservation_time' does not exist on type 'Reservation'. Did you mean 'reservation_datetime'?
+src/components/timeline/PostCard.tsx(30,23): error TS2339: Property 'image_url' does not exist on type 'Post'.
+src/components/timeline/PostCard.tsx(32,35): error TS2339: Property 'image_url' does not exist on type 'Post'.
+src/components/timeline/PostCard.tsx(33,35): error TS2339: Property 'caption' does not exist on type 'Post'.
+src/components/timeline/PostCard.tsx(74,42): error TS2339: Property 'post_date' does not exist on type 'Post'.
+src/components/timeline/PostCard.tsx(93,35): error TS2339: Property 'price_range' does not exist on type 'Restaurant'.
+src/components/timeline/PostCard.tsx(95,43): error TS2339: Property 'price_range' does not exist on type 'Restaurant'.
+src/components/timeline/PostCard.tsx(109,23): error TS2339: Property 'caption' does not exist on type 'Post'.
+src/components/timeline/PostCard.tsx(111,31): error TS2339: Property 'caption' does not exist on type 'Post'.
+src/store/index.ts(1,24): error TS2307: Cannot find module 'zustand' or its corresponding type declarations.
+src/store/index.ts(14,48): error TS7006: Parameter 'set' implicitly has an 'any' type.
+src/store/index.ts(17,15): error TS7006: Parameter 'user' implicitly has an 'any' type.
+src/store/index.ts(18,18): error TS7006: Parameter 'loading' implicitly has an 'any' type.
+src/store/index.ts(29,70): error TS7006: Parameter 'set' implicitly has an 'any' type.
+src/store/index.ts(31,21): error TS7006: Parameter 'restaurant' implicitly has an 'any' type.
+src/store/index.ts(47,56): error TS7006: Parameter 'set' implicitly has an 'any' type.
+src/store/index.ts(52,19): error TS7006: Parameter 'latitude' implicitly has an 'any' type.
+src/store/index.ts(52,29): error TS7006: Parameter 'longitude' implicitly has an 'any' type.
+src/store/index.ts(54,18): error TS7006: Parameter 'loading' implicitly has an 'any' type.
+src/store/index.ts(55,16): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/store/index.ts(67,44): error TS7006: Parameter 'set' implicitly has an 'any' type.
+src/store/index.ts(69,28): error TS7006: Parameter 'state' implicitly has an 'any' type.

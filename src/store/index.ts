@@ -11,7 +11,7 @@ interface AuthState {
     setLoading: (loading: boolean) => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>()((set) => ({
     user: null,
     isLoading: true,
     setUser: (user) => set({ user }),
@@ -26,7 +26,7 @@ interface RestaurantOwnerState {
     setRestaurant: (restaurant: Restaurant | null) => void;
 }
 
-export const useRestaurantOwnerStore = create<RestaurantOwnerState>((set) => ({
+export const useRestaurantOwnerStore = create<RestaurantOwnerState>()((set) => ({
     restaurant: null,
     setRestaurant: (restaurant) => set({ restaurant }),
 }));
@@ -44,7 +44,7 @@ interface LocationState {
     setError: (error: string | null) => void;
 }
 
-export const useLocationStore = create<LocationState>((set) => ({
+export const useLocationStore = create<LocationState>()((set) => ({
     latitude: null,
     longitude: null,
     isLoading: false,
@@ -64,7 +64,7 @@ interface UIState {
     closeMenu: () => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
+export const useUIStore = create<UIState>()((set) => ({
     isMenuOpen: false,
     toggleMenu: () => set((state) => ({ isMenuOpen: !state.isMenuOpen })),
     closeMenu: () => set({ isMenuOpen: false }),

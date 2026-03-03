@@ -81,3 +81,13 @@ li {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* 横スクロールバー非表示 */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

@@ -20,11 +20,11 @@ export function Header({ title, showLogo = true, className }: HeaderProps) {
     return (
         <header
             className={cn(
-                "sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-md",
+                "fixed top-0 left-0 right-0 z-40 border-b border-gray-200 bg-white",
                 className
             )}
         >
-            <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
+            <div className="mx-auto flex h-16 max-w-lg items-center justify-between px-4">
                 {showLogo ? (
                     <Link href="/home" className="flex items-center gap-2">
                         <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500 text-white font-bold text-lg">
@@ -38,7 +38,7 @@ export function Header({ title, showLogo = true, className }: HeaderProps) {
 
                 {user && (
                     <Link
-                        href="/profile"
+                        href="/mypage"
                         className="flex size-8 items-center justify-center rounded-full bg-orange-100 text-orange-600 font-medium text-sm"
                     >
                         {user.display_name?.charAt(0).toUpperCase() || "U"}
