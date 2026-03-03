@@ -196,6 +196,19 @@ export interface PostLike {
 }
 
 /**
+ * ストーリー（24時間限定投稿）
+ */
+export interface Story {
+    id: string;
+    shop_id: string;
+    image_url: string;
+    caption: string | null;
+    expires_at: string;
+    created_at: string;
+    shop?: Restaurant;
+}
+
+/**
  * 店舗画像
  */
 export interface RestaurantImage {
@@ -264,6 +277,7 @@ export interface Database {
             restaurant_images: { Row: RestaurantImage };
             menus: { Row: Menu };
             notifications: { Row: Notification };
+            stories: { Row: Story };
         };
     };
 }

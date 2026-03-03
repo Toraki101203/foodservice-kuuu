@@ -10,6 +10,7 @@ import {
     CreditCard,
     Store,
     TrendingUp,
+    CirclePlus,
 } from "lucide-react";
 import type { Database } from "@/types/database";
 
@@ -251,6 +252,21 @@ export default function ShopDashboardPage() {
 
             {/* クイックアクション */}
             <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-3">
+                <Link
+                    href="/shop-dashboard/stories"
+                    className="flex items-center gap-3 rounded-xl border-2 border-orange-200 bg-orange-50 p-5 transition-shadow hover:shadow-md"
+                >
+                    <CirclePlus className="size-6 text-[var(--color-primary)]" />
+                    <div>
+                        <p className="font-bold text-[var(--color-text-primary)]">
+                            ストーリー投稿
+                        </p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">
+                            24時間限定で今をリアルタイム発信
+                        </p>
+                    </div>
+                </Link>
+
                 <Link
                     href="/shop-dashboard/posts"
                     className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-shadow hover:shadow-md"
