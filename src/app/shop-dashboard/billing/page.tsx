@@ -157,25 +157,26 @@ function BillingContent() {
             )}
 
             {/* プラン一覧 */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 {(Object.entries(PLANS) as [PlanId, (typeof PLANS)[PlanId]][]).map(
                     ([planId, plan]) => {
                         const isCurrent =
                             subscription?.status === "active" && subscription?.plan === planId;
-                        const isPremium = planId === "premium";
+                        const isRecommended = planId === "standard";
+                        const isFree = planId === "free";
 
                         return (
                             <div
                                 key={planId}
                                 className={cn(
                                     "relative flex flex-col rounded-2xl border-2 p-6 transition-shadow",
-                                    isPremium
+                                    isRecommended
                                         ? "border-[var(--color-primary)] bg-[var(--color-surface)]"
                                         : "border-[var(--color-border)] bg-[var(--color-surface)]",
                                     isCurrent && "ring-2 ring-[var(--color-success)]"
                                 )}
                             >
-                                {isPremium && (
+                                {isRecommended && (
                                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--color-primary)] px-3 py-1 text-xs font-bold text-white">
                                         <Sparkles className="mr-1 inline size-3" />
                                         おすすめ
@@ -192,12 +193,20 @@ function BillingContent() {
                                 </div>
 
                                 <div className="mb-6">
-                                    <span className="text-3xl font-bold tabular-nums text-[var(--color-text-primary)]">
-                                        ¥{plan.price.toLocaleString()}
-                                    </span>
-                                    <span className="text-sm text-[var(--color-text-muted)]">
-                                        /月（税込）
-                                    </span>
+                                    {isFree ? (
+                                        <span className="text-3xl font-bold text-[var(--color-text-primary)]">
+                                            無料
+                                        </span>
+                                    ) : (
+                                        <>
+                                            <span className="text-3xl font-bold tabular-nums text-[var(--color-text-primary)]">
+                                                ¥{plan.price.toLocaleString()}
+                                            </span>
+                                            <span className="text-sm text-[var(--color-text-muted)]">
+                                                /月（税込）
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
 
                                 <ul className="mb-6 flex flex-col gap-2">
@@ -216,13 +225,17 @@ function BillingContent() {
                                     <div className="mt-auto flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--color-surface-secondary)] px-4 py-3 text-sm font-medium text-[var(--color-text-muted)]">
                                         現在のプラン
                                     </div>
+                                ) : isFree ? (
+                                    <div className="mt-auto flex min-h-[44px] items-center justify-center rounded-lg bg-[var(--color-surface-secondary)] px-4 py-3 text-sm font-medium text-[var(--color-text-muted)]">
+                                        デフォルトプラン
+                                    </div>
                                 ) : (
                                     <button
                                         onClick={() => handleCheckout(planId)}
                                         disabled={checkoutLoading !== null}
                                         className={cn(
                                             "mt-auto flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg px-4 py-3 text-sm font-bold transition-colors disabled:opacity-50",
-                                            isPremium
+                                            isRecommended
                                                 ? "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]"
                                                 : "border-2 border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary-light)]"
                                         )}

@@ -61,8 +61,9 @@ export default function AdminDashboardPage() {
             let calculatedMrr = 0;
             if (subsData) {
                 subsData.forEach(sub => {
-                    if (sub.plan === "starter") calculatedMrr += 9800; // 仮のプラン料金
-                    if (sub.plan === "premium") calculatedMrr += 19800;
+                    if (sub.plan === "free") calculatedMrr += 0;
+                    if (sub.plan === "standard") calculatedMrr += 9800;
+                    if (sub.plan === "premium") calculatedMrr += 29800;
                 });
             }
             setMrr(calculatedMrr);

@@ -1,30 +1,89 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
     CalendarDays,
+    CheckCircle,
     ClipboardList,
+    Clock,
     CreditCard,
+    Instagram,
+    MinusCircle,
+    Settings,
     Store,
     TrendingUp,
+    XCircle,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import type { SeatStatusType } from "@/types/database";
 
 type Shop = Database["public"]["Tables"]["shops"]["Row"];
 type Reservation = Database["public"]["Tables"]["reservations"]["Row"] & {
     user: Database["public"]["Tables"]["profiles"]["Row"];
 };
 
+interface SeatOption {
+    status: SeatStatusType;
+    label: string;
+    icon: typeof CheckCircle;
+    color: string;
+    bgColor: string;
+    activeColor: string;
+    activeBg: string;
+}
+
+const seatOptions: SeatOption[] = [
+    {
+        status: "available",
+        label: "空き",
+        icon: CheckCircle,
+        color: "text-green-600",
+        bgColor: "bg-green-50",
+        activeColor: "text-white",
+        activeBg: "bg-green-500",
+    },
+    {
+        status: "busy",
+        label: "混雑",
+        icon: Clock,
+        color: "text-yellow-600",
+        bgColor: "bg-yellow-50",
+        activeColor: "text-white",
+        activeBg: "bg-yellow-500",
+    },
+    {
+        status: "full",
+        label: "満席",
+        icon: XCircle,
+        color: "text-red-600",
+        bgColor: "bg-red-50",
+        activeColor: "text-white",
+        activeBg: "bg-red-500",
+    },
+    {
+        status: "closed",
+        label: "閉店",
+        icon: MinusCircle,
+        color: "text-gray-600",
+        bgColor: "bg-gray-50",
+        activeColor: "text-white",
+        activeBg: "bg-gray-500",
+    },
+];
+
 export default function ShopDashboardPage() {
     const supabase = createClient();
     const [shop, setShop] = useState<Shop | null>(null);
     const [todayReservations, setTodayReservations] = useState<Reservation[]>([]);
     const [monthlyCount, setMonthlyCount] = useState(0);
+    const [instagramPostCount, setInstagramPostCount] = useState(0);
+    const [currentSeatStatus, setCurrentSeatStatus] = useState<SeatStatusType | null>(null);
     const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [togglingStatus, setTogglingStatus] = useState(false);
+    const [updatingSeatStatus, setUpdatingSeatStatus] = useState(false);
 
     useEffect(() => {
         const loadDashboard = async () => {
@@ -48,15 +107,6 @@ export default function ShopDashboardPage() {
 
             setShop(shopData);
 
-            // サブスクリプション状態の確認
-            const { data: subscription } = await supabase
-                .from("subscriptions")
-                .select("status")
-                .eq("shop_id", shopData.id)
-                .single();
-
-            setHasActiveSubscription(subscription?.status === "active");
-
             const today = new Date().toISOString().split("T")[0];
             const monthStart = new Date(
                 new Date().getFullYear(),
@@ -66,26 +116,53 @@ export default function ShopDashboardPage() {
                 .toISOString()
                 .split("T")[0];
 
-            // 今日の予約
-            const { data: todayRes } = await supabase
-                .from("reservations")
-                .select("*")
-                .eq("shop_id", shopData.id)
-                .eq("reservation_date", today)
-                .neq("status", "cancelled")
-                .order("reservation_time");
+            // 並列でデータ取得
+            const [
+                subscriptionResult,
+                todayResResult,
+                monthlyResult,
+                seatStatusResult,
+                instagramCountResult,
+            ] = await Promise.all([
+                // サブスクリプション状態の確認
+                supabase
+                    .from("subscriptions")
+                    .select("status")
+                    .eq("shop_id", shopData.id)
+                    .single(),
+                // 今日の予約
+                supabase
+                    .from("reservations")
+                    .select("*")
+                    .eq("shop_id", shopData.id)
+                    .eq("reservation_date", today)
+                    .neq("status", "cancelled")
+                    .order("reservation_time"),
+                // 今月の予約数
+                supabase
+                    .from("reservations")
+                    .select("*", { count: "exact", head: true })
+                    .eq("shop_id", shopData.id)
+                    .gte("reservation_date", monthStart)
+                    .neq("status", "cancelled"),
+                // 現在の席状況
+                supabase
+                    .from("seat_status")
+                    .select("status")
+                    .eq("restaurant_id", shopData.id)
+                    .single(),
+                // Instagram投稿数
+                supabase
+                    .from("instagram_posts")
+                    .select("*", { count: "exact", head: true })
+                    .eq("restaurant_id", shopData.id),
+            ]);
 
-            setTodayReservations(todayRes || []);
-
-            // 今月の予約数
-            const { count } = await supabase
-                .from("reservations")
-                .select("*", { count: "exact", head: true })
-                .eq("shop_id", shopData.id)
-                .gte("reservation_date", monthStart)
-                .neq("status", "cancelled");
-
-            setMonthlyCount(count || 0);
+            setHasActiveSubscription(subscriptionResult.data?.status === "active");
+            setTodayReservations(todayResResult.data || []);
+            setMonthlyCount(monthlyResult.count || 0);
+            setCurrentSeatStatus(seatStatusResult.data?.status as SeatStatusType || null);
+            setInstagramPostCount(instagramCountResult.count || 0);
 
             setLoading(false);
         };
@@ -93,29 +170,58 @@ export default function ShopDashboardPage() {
         loadDashboard();
     }, []);
 
-    const handleToggleOpenStatus = async () => {
-        if (!shop || togglingStatus) return;
-        setTogglingStatus(true);
-        const newStatus = !shop.is_open;
+    // 席状況更新
+    const handleUpdateSeatStatus = useCallback(
+        async (newStatus: SeatStatusType) => {
+            if (!shop || updatingSeatStatus) return;
+            setUpdatingSeatStatus(true);
 
-        try {
-            const { error } = await supabase
-                .from("shops")
-                .update({ is_open: newStatus })
-                .eq("id", shop.id);
+            // 楽観的更新
+            const previousStatus = currentSeatStatus;
+            const previousIsOpen = shop.is_open;
+            setCurrentSeatStatus(newStatus);
 
-            if (!error) {
-                setShop({ ...shop, is_open: newStatus });
-            } else {
-                console.error("Failed to toggle shop status:", error);
-                alert("ステータスの更新に失敗しました。");
+            // is_open も連動させる（available/busy = open, full/closed = closed）
+            const newIsOpen = newStatus === "available" || newStatus === "busy";
+            setShop((prev) => (prev ? { ...prev, is_open: newIsOpen } : prev));
+
+            try {
+                // seat_status テーブルを upsert
+                const { error: seatError } = await supabase
+                    .from("seat_status")
+                    .upsert(
+                        {
+                            restaurant_id: shop.id,
+                            status: newStatus,
+                            updated_at: new Date().toISOString(),
+                        },
+                        { onConflict: "restaurant_id" }
+                    );
+
+                // shops テーブルの is_open も更新
+                const { error: shopError } = await supabase
+                    .from("shops")
+                    .update({ is_open: newIsOpen })
+                    .eq("id", shop.id);
+
+                if (seatError || shopError) {
+                    // ロールバック
+                    setCurrentSeatStatus(previousStatus);
+                    setShop((prev) =>
+                        prev ? { ...prev, is_open: previousIsOpen } : prev
+                    );
+                }
+            } catch {
+                setCurrentSeatStatus(previousStatus);
+                setShop((prev) =>
+                    prev ? { ...prev, is_open: previousIsOpen } : prev
+                );
             }
-        } catch (e) {
-            console.error("Error toggling shop status:", e);
-        } finally {
-            setTogglingStatus(false);
-        }
-    };
+
+            setUpdatingSeatStatus(false);
+        },
+        [shop, updatingSeatStatus, currentSeatStatus, supabase]
+    );
 
     if (loading) {
         return (
@@ -174,29 +280,45 @@ export default function ShopDashboardPage() {
                         {shop.name}
                     </p>
                 </div>
-
-                {/* 営業中ステータストグル */}
-                <div className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 shadow-sm">
-                    <span className={`text-sm font-bold ${shop.is_open ? "text-[var(--color-success)]" : "text-[var(--color-text-muted)]"}`}>
-                        {shop.is_open ? "営業中" : "準備中"}
-                    </span>
-                    <button
-                        onClick={handleToggleOpenStatus}
-                        disabled={togglingStatus}
-                        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-50 ${shop.is_open ? "bg-[var(--color-success)]" : "bg-[var(--color-surface-tertiary)]"}`}
-                        aria-pressed={shop.is_open}
-                    >
-                        <span className="sr-only">営業状態を切り替える</span>
-                        <span
-                            className={`inline-block size-5 transform rounded-full bg-white transition-transform ${shop.is_open ? "translate-x-6" : "translate-x-1"}`}
-                        />
-                    </button>
-                    <p className="hidden text-xs text-[var(--color-text-muted)] lg:block">ワンタップでマップ上の表示を切り替え</p>
-                </div>
             </div>
 
+            {/* 空席ステータス ワンタップ切替 */}
+            <section id="seat-status" className="mb-8">
+                <h2 className="mb-3 text-sm font-bold text-[var(--color-text-primary)]">
+                    空席ステータス
+                </h2>
+                <div className="grid grid-cols-4 gap-2">
+                    {seatOptions.map((option) => {
+                        const Icon = option.icon;
+                        const isActive = currentSeatStatus === option.status;
+
+                        return (
+                            <button
+                                key={option.status}
+                                onClick={() => handleUpdateSeatStatus(option.status)}
+                                disabled={updatingSeatStatus}
+                                className={cn(
+                                    "flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl border-2 transition-colors disabled:opacity-50",
+                                    isActive
+                                        ? `${option.activeBg} border-transparent ${option.activeColor}`
+                                        : `${option.bgColor} border-[var(--color-border)] ${option.color} hover:border-current`
+                                )}
+                            >
+                                <Icon className="size-5" />
+                                <span className="text-xs font-bold">{option.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+                {currentSeatStatus && (
+                    <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                        マップ上の表示にリアルタイムで反映されます
+                    </p>
+                )}
+            </section>
+
             {/* サマリーカード */}
-            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <div className="flex items-center gap-3">
                         <div className="rounded-lg bg-[var(--color-primary-light)] p-2.5">
@@ -224,10 +346,57 @@ export default function ShopDashboardPage() {
                         </div>
                     </div>
                 </div>
+
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-lg bg-[var(--color-primary-light)] p-2.5">
+                            <Instagram className="size-5 text-[var(--color-primary)]" />
+                        </div>
+                        <div>
+                            <p className="text-xs text-[var(--color-text-muted)]">Instagram投稿</p>
+                            <p className="text-2xl font-bold tabular-nums text-[var(--color-text-primary)]">
+                                {instagramPostCount}
+                                <span className="ml-1 text-xs font-normal text-[var(--color-text-muted)]">
+                                    / 6
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* クイックアクション */}
-            <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                <Link
+                    href="/shop-dashboard/instagram"
+                    className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-shadow hover:shadow-md"
+                >
+                    <Instagram className="size-6 text-[var(--color-primary)]" />
+                    <div>
+                        <p className="font-bold text-[var(--color-text-primary)]">
+                            Instagram連携
+                        </p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">
+                            投稿URLの登録・管理
+                        </p>
+                    </div>
+                </Link>
+
+                <a
+                    href="#seat-status"
+                    className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-shadow hover:shadow-md"
+                >
+                    <CheckCircle className="size-6 text-[var(--color-primary)]" />
+                    <div>
+                        <p className="font-bold text-[var(--color-text-primary)]">
+                            空席更新
+                        </p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">
+                            リアルタイムで空席状況を更新
+                        </p>
+                    </div>
+                </a>
+
                 <Link
                     href="/shop-dashboard/reservations"
                     className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-shadow hover:shadow-md"
@@ -247,10 +416,10 @@ export default function ShopDashboardPage() {
                     href="/shop-dashboard/profile"
                     className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-shadow hover:shadow-md"
                 >
-                    <Store className="size-6 text-[var(--color-primary)]" />
+                    <Settings className="size-6 text-[var(--color-primary)]" />
                     <div>
                         <p className="font-bold text-[var(--color-text-primary)]">
-                            店舗情報設定
+                            店舗設定
                         </p>
                         <p className="text-xs text-[var(--color-text-secondary)]">
                             営業時間や紹介文の変更
@@ -291,10 +460,12 @@ export default function ShopDashboardPage() {
                                         {res.reservation_time}
                                     </span>
                                     <span
-                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${res.status === "confirmed"
-                                            ? "bg-green-50 text-[var(--color-success)]"
-                                            : "bg-yellow-50 text-[var(--color-warning)]"
-                                            }`}
+                                        className={cn(
+                                            "inline-flex rounded-full px-2.5 py-1 text-xs font-bold",
+                                            res.status === "confirmed"
+                                                ? "bg-green-50 text-[var(--color-success)]"
+                                                : "bg-yellow-50 text-[var(--color-warning)]"
+                                        )}
                                     >
                                         {res.status === "confirmed" ? "確認済み" : "未確認"}
                                     </span>

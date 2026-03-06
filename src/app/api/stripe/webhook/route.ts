@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
             case "checkout.session.completed": {
                 const session = event.data.object;
                 const shopId = session.metadata?.shop_id;
-                const planId = session.metadata?.plan_id || "starter";
+                const planId = session.metadata?.plan_id || "standard";
 
                 if (shopId && session.subscription) {
                     // 既存のサブスクリプションを確認
