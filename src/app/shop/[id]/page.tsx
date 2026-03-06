@@ -32,15 +32,34 @@ export default async function ShopDetailPage({ params }: PageProps) {
         notFound();
     }
 
-    // アクティブなクーポンを取得
+    // クーポン・Instagram投稿・席状況を並列取得
     const today = new Date().toISOString().split("T")[0];
-    const { data: coupons } = await supabase
-        .from("coupons")
-        .select("*")
-        .eq("shop_id", id)
-        .eq("is_active", true)
-        .gte("valid_until", today)
-        .order("created_at", { ascending: false });
+    const [
+        { data: coupons },
+        { data: instagramPosts },
+        { data: seatStatus },
+    ] = await Promise.all([
+        supabase
+            .from("coupons")
+            .select("*")
+            .eq("shop_id", id)
+            .eq("is_active", true)
+            .gte("valid_until", today)
+            .order("created_at", { ascending: false }),
+        supabase
+            .from("instagram_posts")
+            .select("*")
+            .eq("restaurant_id", id)
+            .order("posted_at", { ascending: false })
+            .limit(6),
+        supabase
+            .from("seat_status")
+            .select("*")
+            .eq("restaurant_id", id)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+    ]);
 
     return (
         <div className="pb-24">
@@ -208,8 +227,15 @@ export default async function ShopDetailPage({ params }: PageProps) {
                 </div>
             )}
 
-            {/* 予約ボタン（固定CTA） + モーダル管理はクライアントコンポーネント */}
-            <ShopDetailClient shopId={shop.id} shopName={shop.name} ownerId={shop.owner_id} />
+            {/* クライアントコンポーネント: 席状況・Instagram・予約・分析トラッキング */}
+            <ShopDetailClient
+                shopId={shop.id}
+                shopName={shop.name}
+                ownerId={shop.owner_id}
+                planType={shop.plan_type}
+                instagramPosts={instagramPosts ?? []}
+                seatStatus={seatStatus ?? null}
+            />
         </div>
     );
 }
