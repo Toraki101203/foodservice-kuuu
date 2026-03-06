@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Input } from "@/components/ui";
@@ -13,6 +13,14 @@ type UserType = "general" | "restaurant";
  * 新規登録ページ
  */
 export default function SignupPage() {
+    return (
+        <Suspense>
+            <SignupForm />
+        </Suspense>
+    );
+}
+
+function SignupForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialType = (searchParams.get("type") as UserType) || "general";

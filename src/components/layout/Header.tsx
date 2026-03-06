@@ -30,7 +30,7 @@ export function Header({ title, showLogo = true, className }: HeaderProps) {
                         <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500 text-white font-bold text-lg">
                             K
                         </div>
-                        <span className="text-xl font-bold text-gray-900">Kuuu</span>
+                        <span className="text-xl font-bold text-gray-900">Kuuu β</span>
                     </Link>
                 ) : (
                     <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
