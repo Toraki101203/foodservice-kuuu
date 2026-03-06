@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
+    BarChart3,
     CalendarDays,
     CheckCircle,
     ClipboardList,
@@ -17,6 +18,7 @@ import {
     XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AiSuggestion from "@/components/dashboard/AiSuggestion";
 import type { Database } from "@/types/database";
 import type { SeatStatusType } from "@/types/database";
 
@@ -441,6 +443,29 @@ export default function ShopDashboardPage() {
                         </p>
                     </div>
                 </Link>
+
+                <Link
+                    href="/shop-dashboard/analytics"
+                    className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-shadow hover:shadow-md"
+                >
+                    <BarChart3 className="size-6 text-[var(--color-primary)]" />
+                    <div>
+                        <p className="font-bold text-[var(--color-text-primary)]">
+                            集客分析
+                        </p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">
+                            アクセス・予約データの分析
+                        </p>
+                    </div>
+                </Link>
+            </div>
+
+            {/* AI投稿最適化提案 */}
+            <div className="mb-8">
+                <AiSuggestion
+                    shopId={shop.id}
+                    isPremium={shop.plan_type === "premium"}
+                />
             </div>
 
             {/* 今日の予約一覧 */}
