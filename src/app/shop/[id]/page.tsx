@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import {
     MapPin,
@@ -32,14 +31,6 @@ export default async function ShopDetailPage({ params }: PageProps) {
     if (!shop) {
         notFound();
     }
-
-    // 最新の投稿を取得
-    const { data: posts } = await supabase
-        .from("posts")
-        .select("*, coupon:coupons(*)")
-        .eq("shop_id", id)
-        .order("created_at", { ascending: false })
-        .limit(10);
 
     // アクティブなクーポンを取得
     const today = new Date().toISOString().split("T")[0];
@@ -216,43 +207,6 @@ export default async function ShopDetailPage({ params }: PageProps) {
                     </div>
                 </div>
             )}
-
-            {/* 最近の投稿 */}
-            <div className="mt-5 px-4">
-                <h2 className="mb-3 text-sm font-bold text-gray-800">最近の投稿</h2>
-                {posts && posts.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2">
-                        {posts.map((post) => (
-                            <Link
-                                key={post.id}
-                                href={`/post/${post.id}`}
-                                className="block overflow-hidden rounded-lg"
-                            >
-                                {post.image_url && (
-                                    <div className="relative aspect-square w-full overflow-hidden">
-                                        <Image
-                                            src={post.image_url}
-                                            alt={post.caption || "投稿"}
-                                            fill
-                                            className="object-cover transition-transform hover:scale-105"
-                                            sizes="50vw"
-                                        />
-                                    </div>
-                                )}
-                                {post.caption && (
-                                    <p className="mt-1.5 line-clamp-2 text-xs text-gray-600">
-                                        {post.caption}
-                                    </p>
-                                )}
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="rounded-xl bg-gray-100 p-6 text-center text-sm text-gray-400">
-                        まだ投稿がありません
-                    </p>
-                )}
-            </div>
 
             {/* 予約ボタン（固定CTA） + モーダル管理はクライアントコンポーネント */}
             <ShopDetailClient shopId={shop.id} shopName={shop.name} ownerId={shop.owner_id} />

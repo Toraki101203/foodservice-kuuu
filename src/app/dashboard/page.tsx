@@ -4,7 +4,6 @@ import {
     Users,
     Calendar,
     BarChart3,
-    FileText,
     ChevronRight,
     TrendingUp,
     Eye,
@@ -37,12 +36,6 @@ export default function DashboardPage() {
             href: "/dashboard/reservations",
             description: "本日の予約を確認・管理",
             badge: stats.reservationsToday,
-        },
-        {
-            icon: FileText,
-            label: "投稿を作成",
-            href: "/dashboard/posts",
-            description: "お知らせや写真を投稿",
         },
         {
             icon: Store,

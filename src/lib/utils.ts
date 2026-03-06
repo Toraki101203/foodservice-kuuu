@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { formatDate } from "@/lib/format";
 
 /**
  * クラス名を結合するユーティリティ関数
@@ -7,18 +8,6 @@ import { twMerge } from "tailwind-merge";
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-/**
- * 日付をフォーマットする
- */
-export function formatDate(date: Date | string): string {
-  const d = new Date(date);
-  return d.toLocaleDateString("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 }
 
 /**
@@ -36,7 +25,7 @@ export function formatRelativeTime(date: Date | string): string {
   if (diffMins < 60) return `${diffMins}分前`;
   if (diffHours < 24) return `${diffHours}時間前`;
   if (diffDays < 7) return `${diffDays}日前`;
-  return formatDate(date);
+  return formatDate(d.toISOString());
 }
 
 /**

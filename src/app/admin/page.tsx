@@ -10,7 +10,6 @@ import {
     Ban,
     CheckCircle,
     UserPlus,
-    Trash2,
 } from "lucide-react";
 import type { Database } from "@/types/database";
 
@@ -80,10 +79,6 @@ export default function AdminDashboardPage() {
         setShops(
             shops.map((s) => (s.id === shopId ? { ...s, status: newStatus as "active" | "suspended" } : s))
         );
-    };
-
-    const deletePost = async (postId: string) => {
-        await supabase.from("posts").delete().eq("id", postId);
     };
 
     if (loading) {

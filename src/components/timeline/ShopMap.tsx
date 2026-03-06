@@ -2,16 +2,12 @@
 
 import { useMemo, useState, useCallback, useRef } from "react";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
-import type { Post, Restaurant } from "@/types/database";
+import type { Restaurant } from "@/types/database";
 import Link from "next/link";
-import { Utensils, Coffee, Beer, MapPin, Navigation, Compass, Filter } from "lucide-react";
-
-type PostWithShop = Post & {
-    shop: Restaurant;
-};
+import { Navigation, Compass, Filter } from "lucide-react";
 
 interface ShopMapProps {
-    posts: PostWithShop[];
+    shops: Restaurant[];
 }
 
 const containerStyle = {
@@ -26,7 +22,7 @@ const defaultCenter = {
     lng: 130.3959,
 };
 
-export default function ShopMap({ posts }: ShopMapProps) {
+export default function ShopMap({ shops: shopsList }: ShopMapProps) {
     const { isLoaded } = useJsApiLoader({
         id: "google-map-script",
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -40,16 +36,10 @@ export default function ShopMap({ posts }: ShopMapProps) {
     const [selectedGenre, setSelectedGenre] = useState<string>("すべて");
     const [showOnlyOpen, setShowOnlyOpen] = useState<boolean>(false);
 
-    // 重複する店舗をまとめる（複数投稿があってもピンは1つ）
+    // 座標を持つ店舗のみ表示対象にする
     const uniqueShops = useMemo(() => {
-        const shopsMap = new Map<string, Restaurant>();
-        posts.forEach((post) => {
-            if (post.shop.latitude && post.shop.longitude && !shopsMap.has(post.shop.id)) {
-                shopsMap.set(post.shop.id, post.shop);
-            }
-        });
-        return Array.from(shopsMap.values());
-    }, [posts]);
+        return shopsList.filter((shop) => shop.latitude && shop.longitude);
+    }, [shopsList]);
 
     // 存在するジャンルのリストを抽出
     const availableGenres = useMemo(() => {

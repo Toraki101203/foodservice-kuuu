@@ -9,7 +9,6 @@ import type { Database } from "@/types/database";
 type Shop = Database["public"]["Tables"]["shops"]["Row"];
 type Reservation = Database["public"]["Tables"]["reservations"]["Row"] & {
     user: Database["public"]["Tables"]["profiles"]["Row"];
-    course?: Database["public"]["Tables"]["shop_courses"]["Row"];
 };
 
 export default function ShopReservationsPage() {

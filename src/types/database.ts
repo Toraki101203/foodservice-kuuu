@@ -1,7 +1,7 @@
 /**
  * ユーザータイプ
  */
-export type UserType = "general" | "restaurant_owner";
+export type UserType = "general" | "restaurant_owner" | "partner";
 
 /**
  * ユーザー
@@ -43,6 +43,8 @@ export interface Restaurant {
     atmosphere_photos?: string[] | null;
     price_range?: string | null;
     closed_days?: string | null;
+    instagram_url?: string | null;
+    instagram_username?: string | null;
     created_at: string;
 }
 
@@ -83,42 +85,6 @@ export interface SeatStatus {
 }
 
 /**
- * 投稿タイプ
- */
-export type PostType = "feed" | "story";
-
-/**
- * 投稿
- */
-export interface Post {
-    id: string;
-    user_id: string;
-    restaurant_id: string | null;
-    content: string;
-    post_type: PostType;
-    like_count: number;
-    comment_count: number;
-    created_at: string;
-    image_url?: string | null;
-    caption?: string | null;
-    post_date?: string | null;
-    // リレーション
-    user?: User;
-    restaurant?: Restaurant;
-    images?: PostImage[];
-}
-
-/**
- * 投稿画像
- */
-export interface PostImage {
-    id: string;
-    post_id: string;
-    image_url: string;
-    order: number;
-}
-
-/**
  * 予約ステータス
  */
 export type ReservationStatus =
@@ -148,22 +114,6 @@ export interface Reservation {
 }
 
 /**
- * フォロータイプ
- */
-export type FollowingType = "user" | "restaurant";
-
-/**
- * フォロー
- */
-export interface Follow {
-    id: string;
-    follower_id: string;
-    following_id: string;
-    following_type: FollowingType;
-    created_at: string;
-}
-
-/**
  * お気に入り
  */
 export interface Favorite {
@@ -174,24 +124,77 @@ export interface Favorite {
 }
 
 /**
- * コメント
+ * Instagram投稿キャッシュ
  */
-export interface Comment {
+export interface InstagramPost {
     id: string;
-    post_id: string;
-    user_id: string;
-    content: string;
+    restaurant_id: string;
+    instagram_post_id: string | null;
+    image_url: string;
+    caption: string | null;
+    permalink: string;
+    posted_at: string | null;
+    fetched_at: string;
     created_at: string;
-    user?: User;
 }
 
 /**
- * いいね
+ * 営業パートナー
  */
-export interface PostLike {
+export interface Partner {
     id: string;
-    post_id: string;
     user_id: string;
+    referral_code: string;
+    created_at: string;
+}
+
+/**
+ * パートナー紹介実績
+ */
+export interface PartnerReferral {
+    id: string;
+    partner_id: string;
+    restaurant_id: string;
+    plan_type: string;
+    contracted_at: string;
+    is_active: boolean;
+    created_at: string;
+    restaurant?: Restaurant;
+}
+
+/**
+ * 振込ステータス
+ */
+export type PayoutStatus = "pending" | "paid";
+
+/**
+ * パートナー振込
+ */
+export interface PartnerPayout {
+    id: string;
+    partner_id: string;
+    amount: number;
+    period_start: string;
+    period_end: string;
+    status: PayoutStatus;
+    paid_at: string | null;
+    created_at: string;
+}
+
+/**
+ * 分析イベントタイプ
+ */
+export type AnalyticsEventType = "view" | "click" | "reserve" | "favorite";
+
+/**
+ * 集客分析イベント
+ */
+export interface AnalyticsEvent {
+    id: string;
+    restaurant_id: string;
+    event_type: AnalyticsEventType;
+    user_id: string | null;
+    metadata: Record<string, unknown>;
     created_at: string;
 }
 
@@ -224,12 +227,9 @@ export interface Menu {
  * 通知タイプ
  */
 export type NotificationType =
-    | "like"
-    | "comment"
-    | "follow"
     | "reservation_confirmed"
     | "reservation_cancelled"
-    | "new_post";
+    | "new_instagram_post";
 
 /**
  * 通知
@@ -253,14 +253,13 @@ export interface Database {
         Tables: {
             shops: { Row: Restaurant };
             profiles: { Row: User };
-            posts: { Row: Post };
             reservations: { Row: Reservation };
             favorites: { Row: Favorite };
-            coupons: { Row: any };
-            shop_courses: { Row: any };
-            post_likes: { Row: PostLike };
-            comments: { Row: Comment };
-            follows: { Row: Follow };
+            instagram_posts: { Row: InstagramPost };
+            partners: { Row: Partner };
+            partner_referrals: { Row: PartnerReferral };
+            partner_payouts: { Row: PartnerPayout };
+            analytics_events: { Row: AnalyticsEvent };
             restaurant_images: { Row: RestaurantImage };
             menus: { Row: Menu };
             notifications: { Row: Notification };

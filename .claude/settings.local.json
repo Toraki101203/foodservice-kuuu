@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx:*)",
+      "Bash(git:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(touch:*)",
+      "Bash(echo:*)",
+      "Bash(export:*)",
+      "Bash(curl:*)",
+      "Bash(node:*)",
+      "Bash(tsx:*)",
+      "Bash(wc:*)",
+      "Bash(sort:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(xargs:*)",
+      "Bash(code:*)",
+      "Edit",
+      "Write",
+      "NotebookEdit"
+    ]
+  }
+}

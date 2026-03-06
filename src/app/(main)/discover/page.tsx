@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Search, Filter, Navigation, MapPin } from "lucide-react";
 import { useLocationStore } from "@/store";
 import Link from "next/link";
+import Image from "next/image";
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from "@react-google-maps/api";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant } from "@/types/database";
@@ -289,7 +290,7 @@ export default function DiscoverPage() {
                             >
                                 <div className="size-14 flex-shrink-0 rounded-lg bg-gray-200 overflow-hidden relative">
                                     {shop.atmosphere_photos && shop.atmosphere_photos.length > 0 ? (
-                                        <img src={shop.atmosphere_photos[0]} alt={shop.name} className="size-full object-cover" />
+                                        <Image src={shop.atmosphere_photos[0]} alt={shop.name} fill className="object-cover" sizes="56px" />
                                     ) : (
                                         <div className="flex size-full items-center justify-center text-gray-400 text-xs">
                                             <MapPin className="size-5" />

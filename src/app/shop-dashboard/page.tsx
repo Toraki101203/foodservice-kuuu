@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import {
     CalendarDays,
-    ImagePlus,
     ClipboardList,
     CreditCard,
     Store,
@@ -23,7 +22,6 @@ export default function ShopDashboardPage() {
     const [shop, setShop] = useState<Shop | null>(null);
     const [todayReservations, setTodayReservations] = useState<Reservation[]>([]);
     const [monthlyCount, setMonthlyCount] = useState(0);
-    const [postCount, setPostCount] = useState(0);
     const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
     const [loading, setLoading] = useState(true);
     const [togglingStatus, setTogglingStatus] = useState(false);
@@ -89,13 +87,6 @@ export default function ShopDashboardPage() {
 
             setMonthlyCount(count || 0);
 
-            // 投稿数
-            const { count: pCount } = await supabase
-                .from("posts")
-                .select("*", { count: "exact", head: true })
-                .eq("shop_id", shopData.id);
-
-            setPostCount(pCount || 0);
             setLoading(false);
         };
 
@@ -205,7 +196,7 @@ export default function ShopDashboardPage() {
             </div>
 
             {/* サマリーカード */}
-            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
                     <div className="flex items-center gap-3">
                         <div className="rounded-lg bg-[var(--color-primary-light)] p-2.5">
@@ -233,39 +224,10 @@ export default function ShopDashboardPage() {
                         </div>
                     </div>
                 </div>
-
-                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                    <div className="flex items-center gap-3">
-                        <div className="rounded-lg bg-[var(--color-primary-light)] p-2.5">
-                            <ImagePlus className="size-5 text-[var(--color-primary)]" />
-                        </div>
-                        <div>
-                            <p className="text-xs text-[var(--color-text-muted)]">総投稿数</p>
-                            <p className="text-2xl font-bold tabular-nums text-[var(--color-text-primary)]">
-                                {postCount}
-                            </p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {/* クイックアクション */}
             <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-3">
-                <Link
-                    href="/shop-dashboard/posts"
-                    className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-shadow hover:shadow-md"
-                >
-                    <ImagePlus className="size-6 text-[var(--color-primary)]" />
-                    <div>
-                        <p className="font-bold text-[var(--color-text-primary)]">
-                            今日の1枚を投稿
-                        </p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">
-                            写真と一言で新規客にアピール
-                        </p>
-                    </div>
-                </Link>
-
                 <Link
                     href="/shop-dashboard/reservations"
                     className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-shadow hover:shadow-md"

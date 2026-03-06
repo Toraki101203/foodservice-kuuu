@@ -34,7 +34,11 @@ export async function POST(request: NextRequest) {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     // WebhookにはCookieがないため、DB更新権限（RLSバイパス）を持つサービスロールキーを使用します
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseServiceKey) {
+        console.error("SUPABASE_SERVICE_ROLE_KEY が設定されていません");
+        return NextResponse.json({ error: "サーバー設定エラー" }, { status: 500 });
+    }
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     try {

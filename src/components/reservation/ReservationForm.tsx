@@ -87,8 +87,8 @@ export default function ReservationForm({
             return;
         }
 
-        // 店舗オーナーに通知を送信
-        await supabase.from("notifications").insert({
+        // 店舗オーナーに通知を送信（失敗しても予約は成功とする）
+        const { error: notifyError } = await supabase.from("notifications").insert({
             user_id: ownerId,
             type: "new_reservation",
             title: "新しい予約リクエスト",
@@ -101,6 +101,9 @@ export default function ReservationForm({
             },
             is_read: false,
         });
+        if (notifyError) {
+            console.error("通知の送信に失敗しました:", notifyError);
+        }
 
         setSuccess(true);
         setLoading(false);
