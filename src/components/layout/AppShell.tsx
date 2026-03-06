@@ -8,7 +8,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
  * ナビゲーション非表示のパス
  * これらのパスではヘッダーとボトムナビを表示しない
  */
-const HIDDEN_NAV_PATHS = ["/login", "/signup", "/dashboard", "/shop-dashboard", "/admin"];
+const HIDDEN_NAV_PATHS = ["/login", "/signup", "/shop-dashboard", "/admin", "/partner"];
 
 function shouldHideNav(pathname: string): boolean {
     return HIDDEN_NAV_PATHS.some(

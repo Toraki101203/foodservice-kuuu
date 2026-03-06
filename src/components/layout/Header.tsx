@@ -26,7 +26,7 @@ export function Header({ title, showLogo = true, className }: HeaderProps) {
         >
             <div className="mx-auto flex h-16 max-w-lg items-center justify-between px-4">
                 {showLogo ? (
-                    <Link href="/home" className="flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2">
                         <div className="flex size-8 items-center justify-center rounded-lg bg-orange-500 text-white font-bold text-lg">
                             K
                         </div>

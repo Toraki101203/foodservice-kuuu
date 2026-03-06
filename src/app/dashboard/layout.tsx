@@ -14,7 +14,7 @@ export default function DashboardLayout({
             {/* ヘッダー */}
             <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
                 <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
-                    <Link href="/home" className="flex items-center gap-2 text-gray-600">
+                    <Link href="/" className="flex items-center gap-2 text-gray-600">
                         <ArrowLeft className="size-5" />
                         <span className="text-sm">アプリに戻る</span>
                     </Link>

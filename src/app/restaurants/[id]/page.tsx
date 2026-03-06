@@ -44,7 +44,7 @@ export default async function RestaurantPage({ params }: RestaurantPageProps) {
             <div className="relative h-56 bg-gradient-to-b from-gray-300 to-gray-400">
                 {/* 戻るボタン */}
                 <Link
-                    href="/discover"
+                    href="/"
                     className="absolute left-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm"
                 >
                     <ArrowLeft className="size-5 text-gray-700" />
