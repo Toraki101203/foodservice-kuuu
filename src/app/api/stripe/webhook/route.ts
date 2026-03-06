@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe/server";
 import { createClient } from "@supabase/supabase-js";
 
+/**
+ * Stripe Price ID からプランIDを逆引きする
+ * 環境変数に設定されたPrice IDとマッチングし、該当するプラン名を返す
+ */
+function resolvePlanFromPriceId(priceId: string): string {
+    const standardPriceId = process.env.STRIPE_STANDARD_PRICE_ID;
+    const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID;
+
+    if (standardPriceId && priceId === standardPriceId) return "standard";
+    if (premiumPriceId && priceId === premiumPriceId) return "premium";
+
+    // マッチしない場合はデフォルト
+    return "standard";
+}
+
 export async function POST(request: NextRequest) {
     const body = await request.text();
     const sig = request.headers.get("stripe-signature");
@@ -81,18 +96,34 @@ export async function POST(request: NextRequest) {
 
             case "customer.subscription.updated": {
                 const subscription = event.data.object;
-                // ステータス更新
+
+                // Price IDからプランを特定
+                const priceId = subscription.items?.data?.[0]?.price?.id;
+                const plan = priceId
+                    ? resolvePlanFromPriceId(priceId)
+                    : undefined;
+
+                const updateData: Record<string, string> = {
+                    status:
+                        subscription.status === "active"
+                            ? "active"
+                            : subscription.status,
+                    current_period_start: new Date(
+                        subscription.current_period_start * 1000
+                    ).toISOString(),
+                    current_period_end: new Date(
+                        subscription.current_period_end * 1000
+                    ).toISOString(),
+                };
+
+                // プランが特定できた場合のみ更新
+                if (plan) {
+                    updateData.plan = plan;
+                }
+
                 await supabase
                     .from("subscriptions")
-                    .update({
-                        status: subscription.status === "active" ? "active" : subscription.status,
-                        current_period_start: new Date(
-                            subscription.current_period_start * 1000
-                        ).toISOString(),
-                        current_period_end: new Date(
-                            subscription.current_period_end * 1000
-                        ).toISOString(),
-                    })
+                    .update(updateData)
                     .eq("stripe_subscription_id", subscription.id);
                 break;
             }

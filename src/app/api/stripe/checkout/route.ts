@@ -3,6 +3,19 @@ import { stripe } from "@/lib/stripe/server";
 import { createClient } from "@/lib/supabase/server";
 import { PLANS, type PlanId } from "@/lib/stripe/plans";
 
+/**
+ * プランIDからStripeのPrice IDを取得する
+ * 環境変数に設定がある場合はそちらを優先（本番Stripe連携）
+ * 設定がない場合はprice_dataでインラインPrice作成にフォールバック
+ */
+function getStripePriceId(planId: PlanId): string | null {
+    const priceMap: Record<string, string | undefined> = {
+        standard: process.env.STRIPE_STANDARD_PRICE_ID,
+        premium: process.env.STRIPE_PREMIUM_PRICE_ID,
+    };
+    return priceMap[planId] || null;
+}
+
 export async function POST(request: NextRequest) {
     try {
         const supabase = await createClient();
@@ -19,7 +32,7 @@ export async function POST(request: NextRequest) {
 
         const { planId } = (await request.json()) as { planId: PlanId };
 
-        if (!PLANS[planId]) {
+        if (!PLANS[planId] || planId === "free") {
             return NextResponse.json(
                 { error: "無効なプランです" },
                 { status: 400 }
@@ -63,27 +76,33 @@ export async function POST(request: NextRequest) {
             customerId = customer.id;
         }
 
+        // Stripe Price IDが環境変数に設定されているか確認
+        const stripePriceId = getStripePriceId(planId);
+
+        // line_items の組み立て
+        const lineItems = stripePriceId
+            ? [{ price: stripePriceId, quantity: 1 }]
+            : [
+                  {
+                      price_data: {
+                          currency: "jpy",
+                          product_data: {
+                              name: `Kuuu ${plan.name}`,
+                              description: `${shop.name} - ${plan.description}`,
+                          },
+                          unit_amount: plan.price,
+                          recurring: { interval: "month" as const },
+                      },
+                      quantity: 1,
+                  },
+              ];
+
         // Checkout Sessionを作成
         const session = await stripe.checkout.sessions.create({
             customer: customerId,
             mode: "subscription",
             payment_method_types: ["card"],
-            line_items: [
-                {
-                    price_data: {
-                        currency: "jpy",
-                        product_data: {
-                            name: `NOW ${plan.name}`,
-                            description: `${shop.name} - ${plan.description}`,
-                        },
-                        unit_amount: plan.price,
-                        recurring: {
-                            interval: "month",
-                        },
-                    },
-                    quantity: 1,
-                },
-            ],
+            line_items: lineItems,
             success_url: `${request.nextUrl.origin}/shop-dashboard/billing?success=true`,
             cancel_url: `${request.nextUrl.origin}/shop-dashboard/billing?cancelled=true`,
             metadata: {
