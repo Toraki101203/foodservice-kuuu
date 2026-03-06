@@ -73,7 +73,7 @@ function SignupForm() {
             }
 
             // 登録成功
-            router.push("/home");
+            router.push("/");
             router.refresh();
         } catch {
             setError("登録に失敗しました。もう一度お試しください。");

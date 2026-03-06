@@ -14,8 +14,8 @@ interface RestaurantCardProps {
 }
 
 /**
- * リストビュー用の店舗カード
- * 写真（Instagram優先 → atmosphere_photos fallback）、名前、ジャンル、空席バッジ、距離を表示
+ * フィード形式の店舗カード
+ * Instagram風の縦型レイアウト: ヘッダー（店名+空席）→ 画像 → 情報
  */
 export function RestaurantCard({
   restaurant,
@@ -23,14 +23,12 @@ export function RestaurantCard({
   instagramPost,
   distance,
 }: RestaurantCardProps) {
-  // 表示用画像URL: Instagram投稿 > 雰囲気写真 > なし
   const imageUrl =
     instagramPost?.image_url ??
     (restaurant.atmosphere_photos && restaurant.atmosphere_photos.length > 0
       ? restaurant.atmosphere_photos[0]
       : null);
 
-  // 距離のフォーマット
   const formattedDistance =
     distance !== null
       ? distance < 1
@@ -41,40 +39,65 @@ export function RestaurantCard({
   return (
     <Link
       href={`/shop/${restaurant.id}`}
-      className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-3 transition-colors hover:border-orange-100 hover:bg-orange-50/50"
+      className="block bg-white"
     >
-      {/* サムネイル画像 */}
-      <div className="relative size-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
-        {imageUrl ? (
+      {/* ヘッダー: 店名 + 空席 */}
+      <div className="flex items-center justify-between px-4 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-600">
+            {restaurant.name.charAt(0)}
+          </div>
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-bold text-gray-800">
+              {restaurant.name}
+            </h3>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <span>{restaurant.genre}</span>
+              {formattedDistance && (
+                <>
+                  <span>·</span>
+                  <span>{formattedDistance}</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        {seatStatus && <SeatBadge status={seatStatus.status} />}
+      </div>
+
+      {/* メイン画像 */}
+      {imageUrl ? (
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
           <Image
             src={imageUrl}
             alt={restaurant.name}
             fill
             className="object-cover"
-            sizes="80px"
+            sizes="(max-width: 640px) 100vw, 512px"
           />
-        ) : (
-          <div className="flex size-full items-center justify-center text-gray-300">
-            <MapPin className="size-6" />
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex aspect-[4/3] w-full items-center justify-center bg-gray-50">
+          <MapPin className="size-10 text-gray-200" />
+        </div>
+      )}
 
-      {/* 店舗情報 */}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <h3 className="truncate text-sm font-bold text-gray-800 text-balance">
-          {restaurant.name}
-        </h3>
-        <p className="truncate text-xs text-gray-500 text-pretty">
-          {restaurant.genre}
-        </p>
-        <div className="flex items-center gap-2">
-          {seatStatus && <SeatBadge status={seatStatus.status} />}
-          {formattedDistance && (
-            <span className="text-xs text-gray-400">{formattedDistance}</span>
+      {/* フッター情報 */}
+      {(restaurant.address || instagramPost?.caption) && (
+        <div className="px-4 py-2.5">
+          {instagramPost?.caption && (
+            <p className="line-clamp-2 text-sm text-gray-600 leading-relaxed text-pretty">
+              {instagramPost.caption}
+            </p>
+          )}
+          {restaurant.address && !instagramPost?.caption && (
+            <p className="flex items-center gap-1 text-xs text-gray-400">
+              <MapPin className="size-3.5" />
+              <span className="truncate">{restaurant.address}</span>
+            </p>
           )}
         </div>
-      </div>
+      )}
     </Link>
   );
 }

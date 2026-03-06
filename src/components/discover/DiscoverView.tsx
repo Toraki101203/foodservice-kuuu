@@ -52,7 +52,7 @@ export function DiscoverView({
   const { latitude, longitude, isLoading, setLocation, setLoading, setError } =
     useLocationStore();
 
-  const [viewMode, setViewMode] = useState<ViewMode>("map");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState<string>("すべて");
@@ -286,21 +286,23 @@ export function DiscoverView({
             onSelectShop={setSelectedShop}
           />
         ) : (
-          <div className="h-full overflow-y-auto px-4 py-3">
+          <div className="h-full overflow-y-auto bg-white">
             {filteredShops.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                <p className="text-xs font-bold text-gray-500">
+              <div>
+                <p className="px-4 py-2 text-xs font-bold text-gray-400">
                   {filteredShops.length}件の店舗
                 </p>
-                {filteredShops.map(({ shop, distance }) => (
-                  <RestaurantCard
-                    key={shop.id}
-                    restaurant={shop}
-                    seatStatus={seatStatusMap.get(shop.id)}
-                    instagramPost={instagramPostMap.get(shop.id)}
-                    distance={distance}
-                  />
-                ))}
+                <div className="divide-y divide-gray-100">
+                  {filteredShops.map(({ shop, distance }) => (
+                    <RestaurantCard
+                      key={shop.id}
+                      restaurant={shop}
+                      seatStatus={seatStatusMap.get(shop.id)}
+                      instagramPost={instagramPostMap.get(shop.id)}
+                      distance={distance}
+                    />
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="flex h-full flex-col items-center justify-center text-center">

@@ -59,7 +59,7 @@ src/
 │   ├── (auth)/              # ログイン・サインアップ
 │   ├── api/
 │   │   ├── ai/suggestion/   # AI投稿最適化API（プレミアム）
-│   │   ├── instagram/oembed/ # Instagram oEmbed プロキシ
+│   │   ├── instagram/        # Instagram OAuth・自動同期・oEmbed
 │   │   └── stripe/          # Stripe checkout/webhook/portal
 │   ├── admin/               # 管理画面
 │   ├── partner/             # 営業パートナーポータル
@@ -101,5 +101,6 @@ src/
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
 - `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_STANDARD_PRICE_ID` / `STRIPE_PREMIUM_PRICE_ID`
-- `FACEBOOK_APP_TOKEN`（Instagram oEmbed用）
+- `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET`（Instagram自動連携用）
+- `NEXT_PUBLIC_SITE_URL`（OAuth コールバックURL）
 - `ANTHROPIC_API_KEY`（AI提案用、プレミアム機能）

@@ -65,7 +65,6 @@ export async function POST(request: NextRequest) {
 
 簡潔に300文字以内で回答してください。`;
 
-    // @ts-expect-error -- @anthropic-ai/sdk は任意の依存パッケージ（未インストール時は catch で処理）
     const mod = await import("@anthropic-ai/sdk");
     const AnthropicClient = mod.default;
     const anthropic = new AnthropicClient();
