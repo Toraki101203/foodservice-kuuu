@@ -1,2 +1,3 @@
-export * from "./BottomNav";
-export * from "./Header";
+export { Header } from "./header";
+export { BottomNav } from "./bottom-nav";
+export { AppShell } from "./app-shell";

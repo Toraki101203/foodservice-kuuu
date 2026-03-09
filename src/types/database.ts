@@ -35,7 +35,8 @@ export interface Restaurant {
     phone: string | null;
     business_hours: BusinessHours | null;
     categories: string[];
-    genre: string;
+    genre: string | null;
+    main_image?: string | null;
     plan_type: PlanType;
     is_verified: boolean;
     is_open: boolean;
@@ -103,18 +104,16 @@ export type ReservationStatus =
 export interface Reservation {
     id: string;
     user_id: string;
-    restaurant_id: string;
-    reservation_datetime: string;
+    shop_id: string;
+    reservation_date: string;
+    reservation_time: string;
     party_size: number;
     note: string | null;
     status: ReservationStatus;
     created_at: string;
-    reservation_date?: string | null;
-    reservation_time?: string | null;
-    shop_id?: string | null;
     // リレーション
     user?: User;
-    restaurant?: Restaurant;
+    shop?: Restaurant;
 }
 
 /**
@@ -233,7 +232,8 @@ export interface Menu {
 export type NotificationType =
     | "reservation_confirmed"
     | "reservation_cancelled"
-    | "new_instagram_post";
+    | "new_instagram_post"
+    | "new_reservation";
 
 /**
  * 通知
@@ -250,6 +250,31 @@ export interface Notification {
 }
 
 /**
+ * フォロー（ユーザー → 店舗）
+ */
+export interface Follow {
+    id: string;
+    user_id: string;
+    shop_id: string;
+    created_at: string;
+}
+
+/**
+ * Instagram ストーリー（24時間限定）
+ */
+export interface InstagramStory {
+    id: string;
+    shop_id: string;
+    instagram_media_id: string;
+    media_url: string;
+    media_type: "IMAGE" | "VIDEO";
+    timestamp: string;
+    expires_at: string;
+    fetched_at: string;
+    shop?: Restaurant;
+}
+
+/**
  * 互換性のための Supabase Database Wrapper
  */
 export interface Database {
@@ -258,6 +283,7 @@ export interface Database {
             shops: { Row: Restaurant };
             profiles: { Row: User };
             reservations: { Row: Reservation };
+            seat_status: { Row: SeatStatus };
             favorites: { Row: Favorite };
             instagram_posts: { Row: InstagramPost };
             partners: { Row: Partner };
@@ -267,6 +293,8 @@ export interface Database {
             restaurant_images: { Row: RestaurantImage };
             menus: { Row: Menu };
             notifications: { Row: Notification };
+            follows: { Row: Follow };
+            instagram_stories: { Row: InstagramStory };
         };
     };
 }

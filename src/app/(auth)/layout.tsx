@@ -1,14 +1,6 @@
-/**
- * 認証関連ページのレイアウト
- * ヘッダー・ボトムナビなし
- */
-export default function AuthLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className="min-h-dvh bg-gray-50">
+        <div className="flex min-h-dvh items-center justify-center bg-gray-50 px-4">
             {children}
         </div>
     );

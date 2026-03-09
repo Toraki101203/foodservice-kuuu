@@ -2,52 +2,20 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 interface AvatarProps {
-    src?: string | null;
+    src: string | null | undefined;
     alt: string;
-    size?: "sm" | "md" | "lg" | "xl";
+    size?: number;
     className?: string;
 }
 
-/**
- * アバター画像コンポーネント
- */
-export function Avatar({ src, alt, size = "md", className }: AvatarProps) {
-    const sizes = {
-        sm: "size-8",
-        md: "size-10",
-        lg: "size-12",
-        xl: "size-16",
-    };
-
-    const imageSizes = {
-        sm: 32,
-        md: 40,
-        lg: 48,
-        xl: 64,
-    };
-
-    // イニシャルを取得
-    const initial = alt.charAt(0).toUpperCase();
-
+export function Avatar({ src, alt, size = 40, className }: AvatarProps) {
     return (
-        <div
-            className={cn(
-                "relative flex-shrink-0 overflow-hidden rounded-full bg-orange-100",
-                sizes[size],
-                className
-            )}
-        >
+        <div className={cn("relative overflow-hidden rounded-full bg-gray-200", className)} style={{ width: size, height: size }}>
             {src ? (
-                <Image
-                    src={src}
-                    alt={alt}
-                    width={imageSizes[size]}
-                    height={imageSizes[size]}
-                    className="size-full object-cover"
-                />
+                <Image src={src} alt={alt} fill className="object-cover" sizes={`${size}px`} />
             ) : (
-                <div className="flex size-full items-center justify-center text-orange-600 font-medium">
-                    {initial}
+                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                    {alt.charAt(0).toUpperCase()}
                 </div>
             )}
         </div>

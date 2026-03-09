@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
+import { syncShopPosts } from "@/lib/instagram-sync";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
         );
 
         let accessToken = shortLivedToken;
-        let expiresAt = new Date(Date.now() + 3600 * 1000); // 1時間（短期のデフォルト）
+        let expiresAt = new Date(Date.now() + 3600 * 1000);
 
         if (longLivedRes.ok) {
             const longLivedData = await longLivedRes.json();
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 3. Instagram ユーザー情報を取得してユーザー名を更新
+        // 3. Instagram ユーザー情報を取得
         const profileRes = await fetch(
             `https://graph.instagram.com/v21.0/me?fields=username&access_token=${accessToken}`
         );
@@ -91,8 +92,12 @@ export async function GET(request: NextRequest) {
             igUsername = profileData.username || null;
         }
 
-        // 4. DBに保存
-        const supabase = await createClient();
+        // 4. service_role で DB に保存（RLS バイパス）
+        const supabaseAdmin = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+
         const updateData: Record<string, unknown> = {
             instagram_access_token: accessToken,
             instagram_token_expires_at: expiresAt.toISOString(),
@@ -102,19 +107,25 @@ export async function GET(request: NextRequest) {
             updateData.instagram_username = igUsername;
         }
 
-        await supabase
+        await supabaseAdmin
             .from("shops")
             .update(updateData)
             .eq("owner_id", state);
 
-        // 5. 初回同期を実行
-        const syncRes = await fetch(`${SITE_URL}/api/instagram/sync`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: state }),
-        });
+        // 5. 初回同期を直接実行（HTTP 自己参照を回避）
+        const { data: shop } = await supabaseAdmin
+            .from("shops")
+            .select("id, instagram_access_token, instagram_user_id, instagram_token_expires_at")
+            .eq("owner_id", state)
+            .single();
 
-        const syncParam = syncRes.ok ? "&synced=true" : "";
+        let syncParam = "";
+        if (shop?.instagram_access_token) {
+            const result = await syncShopPosts(supabaseAdmin, shop);
+            if (result.success) {
+                syncParam = "&synced=true";
+            }
+        }
 
         return NextResponse.redirect(
             `${SITE_URL}/shop-dashboard/instagram?connected=true${syncParam}`

@@ -17,9 +17,11 @@
     "@types/mapbox-gl": "^3.4.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.35.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
     "mapbox-gl": "^3.18.0",
+    "motion": "^12.35.0",
     "next": "16.1.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -39,6 +41,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
+    "pg": "^8.20.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

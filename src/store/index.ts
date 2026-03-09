@@ -69,3 +69,32 @@ export const useUIStore = create<UIState>()((set) => ({
     toggleMenu: () => set((state) => ({ isMenuOpen: !state.isMenuOpen })),
     closeMenu: () => set({ isMenuOpen: false }),
 }));
+
+/**
+ * フォローストア
+ */
+interface FollowState {
+    followingIds: Set<string>;
+    setFollowingIds: (ids: string[]) => void;
+    addFollow: (shopId: string) => void;
+    removeFollow: (shopId: string) => void;
+    isFollowing: (shopId: string) => boolean;
+}
+
+export const useFollowStore = create<FollowState>()((set, get) => ({
+    followingIds: new Set<string>(),
+    setFollowingIds: (ids) => set({ followingIds: new Set(ids) }),
+    addFollow: (shopId) =>
+        set((state) => {
+            const next = new Set(state.followingIds);
+            next.add(shopId);
+            return { followingIds: next };
+        }),
+    removeFollow: (shopId) =>
+        set((state) => {
+            const next = new Set(state.followingIds);
+            next.delete(shopId);
+            return { followingIds: next };
+        }),
+    isFollowing: (shopId) => get().followingIds.has(shopId),
+}));

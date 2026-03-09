@@ -44,6 +44,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (subscription.stripe_customer_id === "cus_local_dev") {
+            return NextResponse.json(
+                { error: "ローカルテスト用のダミー決済データのため、実際のStripeポータル（カード情報管理）画面は開けません。" },
+                { status: 400 }
+            );
+        }
+
         // Stripe Customer Portalセッションを作成
         const session = await stripe.billingPortal.sessions.create({
             customer: subscription.stripe_customer_id,

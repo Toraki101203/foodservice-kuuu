@@ -11,9 +11,12 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "*.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "*.cdninstagram.com",
+      },
     ],
   },
-  /* config options here */
   reactCompiler: true,
 };
 

@@ -27,6 +27,9 @@
       "Edit",
       "Write",
       "NotebookEdit"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\enhan\\Documents\\foodservice-kuuu\\src\\app\\shop"
     ]
   }
 }
