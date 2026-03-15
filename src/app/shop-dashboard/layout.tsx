@@ -14,6 +14,17 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/login");
 
+  // user_type チェック: restaurant_owner のみダッシュボードアクセス可
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_type")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || profile.user_type !== "restaurant_owner") {
+    redirect("/");
+  }
+
   // 店舗データの取得・作成（instagram_access_token を除外してクライアント露出を防止）
   let { data: shop } = await supabase
     .from("shops")

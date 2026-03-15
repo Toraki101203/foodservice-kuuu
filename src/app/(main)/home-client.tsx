@@ -20,7 +20,6 @@ type HomeClientProps = {
   popularPosts: PostWithShop[];
   stories: StoryGroup[];
   favoriteShopIds: string[];
-  followingShopIds: string[];
 };
 
 const TABS = ["フォロー中", "近く", "人気"];

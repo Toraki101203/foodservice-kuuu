@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+const ALLOWED_USER_TYPES = ["general", "restaurant_owner", "partner"] as const;
+
 export async function POST(request: Request) {
   const { email, password, userType } = await request.json();
 
@@ -11,13 +13,24 @@ export async function POST(request: Request) {
     );
   }
 
+  if (typeof password !== "string" || password.length < 8) {
+    return NextResponse.json(
+      { error: "パスワードは8文字以上で入力してください" },
+      { status: 400 }
+    );
+  }
+
+  const validUserType = ALLOWED_USER_TYPES.includes(userType)
+    ? userType
+    : "general";
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
-        user_type: userType || "general",
+        user_type: validUserType,
       },
     },
   });

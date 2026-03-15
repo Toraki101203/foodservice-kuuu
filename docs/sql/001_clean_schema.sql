@@ -320,6 +320,9 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON seat_status    FOR EACH ROW EXECU
 -- =========================
 
 -- ----- profiles -----
+-- 注意: SELECT は全ユーザーに開放。email は profiles テーブルに含まれるが、
+-- クライアント側で .select("id, display_name, avatar_url") のように
+-- 必要なカラムのみ取得すること（email の不必要な露出を防止）。
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "profiles_select_all"  ON profiles FOR SELECT USING (true);
 CREATE POLICY "profiles_update_own"  ON profiles FOR UPDATE USING (auth.uid() = id);
@@ -379,6 +382,8 @@ CREATE POLICY "instagram_stories_select_active" ON instagram_stories FOR SELECT
   USING (expires_at > now());
 
 -- ----- subscriptions -----
+-- 注意: subscriptions は Stripe Webhook（service_role）経由でのみ書き込み。
+-- クライアントからの INSERT/UPDATE/DELETE ポリシーは意図的に省略。
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "subscriptions_select_owner" ON subscriptions FOR SELECT
   USING (EXISTS (SELECT 1 FROM shops WHERE shops.id = shop_id AND shops.owner_id = auth.uid()));
@@ -392,7 +397,10 @@ CREATE POLICY "notifications_update_own" ON notifications FOR UPDATE USING (auth
 ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "analytics_select_owner" ON analytics_events FOR SELECT
   USING (EXISTS (SELECT 1 FROM shops WHERE shops.id = shop_id AND shops.owner_id = auth.uid()));
-CREATE POLICY "analytics_insert_all" ON analytics_events FOR INSERT WITH CHECK (true);
+-- 注意: INSERT は認証済みユーザーのみに制限。
+-- 存在しない shop_id への書き込みは FK 制約で防止される。
+CREATE POLICY "analytics_insert_authenticated" ON analytics_events FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
 
 -- ----- partners -----
 ALTER TABLE partners ENABLE ROW LEVEL SECURITY;

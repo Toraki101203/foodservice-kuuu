@@ -30,7 +30,7 @@ export function StoryBar({ items, onStoryClick }: StoryBarProps) {
               className={cn(
                 "flex size-14 items-center justify-center rounded-full p-0.5",
                 item.hasUnread
-                  ? "bg-gradient-to-tr from-orange-400 to-orange-600"
+                  ? "bg-orange-500"
                   : "bg-gray-300"
               )}
             >

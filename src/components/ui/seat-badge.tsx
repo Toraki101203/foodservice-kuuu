@@ -1,5 +1,4 @@
-import { cn } from "@/lib/utils";
-import { getSeatStatusLabel, getSeatStatusColor } from "@/lib/utils";
+import { cn, getSeatStatusLabel, getSeatStatusColor } from "@/lib/utils";
 import type { SeatStatusType } from "@/types/database";
 
 type SeatBadgeProps = {

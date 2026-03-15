@@ -16,23 +16,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
 
-    const loadUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        setUser(profile ?? null);
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    };
-
-    loadUser();
-
+    // onAuthStateChange は初期セッション復元時にも INITIAL_SESSION イベントを発火するため
+    // 別途 loadUser を呼ぶ必要はない（重複プロフィールフェッチを防止）
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
@@ -45,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setUser(null);
         }
+        setLoading(false);
       }
     );
 

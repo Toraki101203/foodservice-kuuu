@@ -58,8 +58,8 @@ export default async function AnalyticsPage() {
 
   // プレミアムプラン: 分析データを取得
   const now = new Date();
-  const thirtyDaysAgo = new Date(now);
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 90);
+  const ninetyDaysAgo = new Date(now);
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
   const [
     { data: events },
@@ -71,14 +71,14 @@ export default async function AnalyticsPage() {
       .from("analytics_events")
       .select("*")
       .eq("shop_id", shop.id)
-      .gte("created_at", thirtyDaysAgo.toISOString())
+      .gte("created_at", ninetyDaysAgo.toISOString())
       .order("created_at", { ascending: true }),
     supabase
       .from("analytics_events")
       .select("*", { count: "exact", head: true })
       .eq("shop_id", shop.id)
       .eq("event_type", "view")
-      .gte("created_at", thirtyDaysAgo.toISOString()),
+      .gte("created_at", ninetyDaysAgo.toISOString()),
     supabase
       .from("favorites")
       .select("*", { count: "exact", head: true })
@@ -87,7 +87,7 @@ export default async function AnalyticsPage() {
       .from("reservations")
       .select("*", { count: "exact", head: true })
       .eq("shop_id", shop.id)
-      .gte("created_at", thirtyDaysAgo.toISOString()),
+      .gte("created_at", ninetyDaysAgo.toISOString()),
   ]);
 
   return (

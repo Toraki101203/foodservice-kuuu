@@ -78,7 +78,6 @@ export default async function HomePage() {
       popularPosts={popularPosts}
       stories={groupedStories}
       favoriteShopIds={favShopIds}
-      followingShopIds={followingShopIds}
     />
   );
 }

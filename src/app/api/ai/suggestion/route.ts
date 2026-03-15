@@ -49,20 +49,16 @@ export async function POST(request: Request) {
   const message = await client.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 1024,
+    system: "あなたは飲食店の集客アドバイザーです。ユーザーから提供されるデータを分析して、Instagram投稿の最適化提案を日本語で3つ提示してください。各提案には提案タイトル、具体的なアクション、期待される効果を含めてください。",
     messages: [
       {
         role: "user",
-        content: `あなたは飲食店の集客アドバイザーです。以下のデータを分析して、Instagram投稿の最適化提案を日本語で3つ提示してください。
+        content: `以下のデータを分析してください。
 
-店舗名: ${shop.name}
-ジャンル: ${shop.genre || "未設定"}
+店舗名: ${JSON.stringify(shop.name)}
+ジャンル: ${JSON.stringify(shop.genre || "未設定")}
 直近の分析イベント: ${JSON.stringify(events?.slice(0, 20))}
-直近のInstagram投稿: ${JSON.stringify(posts?.map((p: Record<string, unknown>) => ({ caption: p.caption, posted_at: p.posted_at })))}
-
-各提案には以下を含めてください:
-1. 提案タイトル
-2. 具体的なアクション
-3. 期待される効果`,
+直近のInstagram投稿: ${JSON.stringify(posts?.map((p: Record<string, unknown>) => ({ caption: p.caption, posted_at: p.posted_at })))}`,
       },
     ],
   });

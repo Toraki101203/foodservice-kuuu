@@ -3,6 +3,16 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
+// 必須環境変数の検証（起動時）
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const STRIPE_STANDARD_PRICE_ID = process.env.STRIPE_STANDARD_PRICE_ID;
+const STRIPE_PREMIUM_PRICE_ID = process.env.STRIPE_PREMIUM_PRICE_ID;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error("Stripe webhook: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY が未設定です");
+}
+
 // Stripe v20+ の型定義に current_period_end が含まれない場合のヘルパー
 function getPeriodEnd(sub: Stripe.Subscription): string {
   const raw = sub as unknown as Record<string, unknown>;
@@ -12,10 +22,7 @@ function getPeriodEnd(sub: Stripe.Subscription): string {
   return new Date(epoch * 1000).toISOString();
 }
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -42,9 +49,11 @@ export async function POST(request: Request) {
         );
         const priceId = sub.items.data[0]?.price.id;
         const planType =
-          priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID
+          priceId === STRIPE_PREMIUM_PRICE_ID
             ? "premium"
-            : "standard";
+            : priceId === STRIPE_STANDARD_PRICE_ID
+              ? "standard"
+              : "standard";
 
         await supabaseAdmin.from("subscriptions").upsert(
           {
