@@ -1,300 +1,325 @@
-/**
- * ユーザータイプ
- */
+// ============================================================
+// Kuuu — データベース型定義
+// Supabase スキーマに完全一致する TypeScript 型
+// ============================================================
+
+// --- ENUM 型 ---
+
 export type UserType = "general" | "restaurant_owner" | "partner";
 
-/**
- * ユーザー
- */
-export interface User {
-    id: string;
-    email: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    bio: string | null;
-    user_type: UserType;
-    created_at: string;
-}
-
-/**
- * プランタイプ
- */
 export type PlanType = "free" | "standard" | "premium";
 
-/**
- * 店舗
- */
-export interface Restaurant {
-    id: string;
-    owner_id: string;
-    name: string;
-    description: string | null;
-    address: string;
-    latitude: number;
-    longitude: number;
-    phone: string | null;
-    business_hours: BusinessHours | null;
-    categories: string[];
-    genre: string | null;
-    main_image?: string | null;
-    plan_type: PlanType;
-    is_verified: boolean;
-    is_open: boolean;
-    status?: string | null;
-    atmosphere_photos?: string[] | null;
-    price_range?: string | null;
-    closed_days?: string | null;
-    instagram_url?: string | null;
-    instagram_username?: string | null;
-    instagram_access_token?: string | null;
-    instagram_token_expires_at?: string | null;
-    instagram_user_id?: string | null;
-    instagram_synced_at?: string | null;
-    created_at: string;
-}
-
-/**
- * 営業時間
- */
-export interface BusinessHours {
-    monday?: DayHours;
-    tuesday?: DayHours;
-    wednesday?: DayHours;
-    thursday?: DayHours;
-    friday?: DayHours;
-    saturday?: DayHours;
-    sunday?: DayHours;
-}
-
-export interface DayHours {
-    open: string;
-    close: string;
-    is_closed?: boolean;
-}
-
-/**
- * 席状況ステータス
- */
 export type SeatStatusType = "available" | "busy" | "full" | "closed";
 
-/**
- * 席状況
- */
-export interface SeatStatus {
-    id: string;
-    restaurant_id: string;
-    status: SeatStatusType;
-    available_seats: number | null;
-    wait_time_minutes: number | null;
-    updated_at: string;
-}
-
-/**
- * 予約ステータス
- */
 export type ReservationStatus =
-    | "pending"
-    | "confirmed"
-    | "cancelled"
-    | "completed";
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "completed";
 
-/**
- * 予約
- */
-export interface Reservation {
-    id: string;
-    user_id: string;
-    shop_id: string;
-    reservation_date: string;
-    reservation_time: string;
-    party_size: number;
-    note: string | null;
-    status: ReservationStatus;
-    created_at: string;
-    // リレーション
-    user?: User;
-    shop?: Restaurant;
-}
+export type SubscriptionStatus =
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "incomplete";
 
-/**
- * お気に入り
- */
-export interface Favorite {
-    id: string;
-    user_id: string;
-    restaurant_id: string;
-    created_at: string;
-}
-
-/**
- * Instagram投稿キャッシュ
- */
-export interface InstagramPost {
-    id: string;
-    restaurant_id: string;
-    instagram_post_id: string | null;
-    image_url: string;
-    caption: string | null;
-    permalink: string;
-    posted_at: string | null;
-    fetched_at: string;
-    created_at: string;
-}
-
-/**
- * 営業パートナー
- */
-export interface Partner {
-    id: string;
-    user_id: string;
-    referral_code: string;
-    created_at: string;
-}
-
-/**
- * パートナー紹介実績
- */
-export interface PartnerReferral {
-    id: string;
-    partner_id: string;
-    restaurant_id: string;
-    plan_type: string;
-    contracted_at: string;
-    is_active: boolean;
-    created_at: string;
-    restaurant?: Restaurant;
-}
-
-/**
- * 振込ステータス
- */
-export type PayoutStatus = "pending" | "paid";
-
-/**
- * パートナー振込
- */
-export interface PartnerPayout {
-    id: string;
-    partner_id: string;
-    amount: number;
-    period_start: string;
-    period_end: string;
-    status: PayoutStatus;
-    paid_at: string | null;
-    created_at: string;
-}
-
-/**
- * 分析イベントタイプ
- */
-export type AnalyticsEventType = "view" | "click" | "reserve" | "favorite";
-
-/**
- * 集客分析イベント
- */
-export interface AnalyticsEvent {
-    id: string;
-    restaurant_id: string;
-    event_type: AnalyticsEventType;
-    user_id: string | null;
-    metadata: Record<string, unknown>;
-    created_at: string;
-}
-
-/**
- * 店舗画像
- */
-export interface RestaurantImage {
-    id: string;
-    restaurant_id: string;
-    image_url: string;
-    is_primary: boolean;
-    order: number;
-}
-
-/**
- * メニュー
- */
-export interface Menu {
-    id: string;
-    restaurant_id: string;
-    name: string;
-    description: string | null;
-    price: number;
-    image_url: string | null;
-    category: string | null;
-    is_available: boolean;
-}
-
-/**
- * 通知タイプ
- */
 export type NotificationType =
-    | "reservation_confirmed"
-    | "reservation_cancelled"
-    | "new_instagram_post"
-    | "new_reservation";
+  | "follow"
+  | "new_post"
+  | "new_instagram_post"
+  | "reservation_confirmed"
+  | "reservation_cancelled"
+  | "new_reservation"
+  | "favorite";
 
-/**
- * 通知
- */
-export interface Notification {
-    id: string;
-    user_id: string;
-    type: NotificationType;
-    title: string;
-    message: string;
-    data: Record<string, unknown> | null;
-    is_read: boolean;
-    created_at: string;
-}
+export type AnalyticsEventType =
+  | "view"
+  | "click"
+  | "reserve"
+  | "favorite"
+  | "share"
+  | "instagram_click";
 
-/**
- * フォロー（ユーザー → 店舗）
- */
-export interface Follow {
-    id: string;
-    user_id: string;
-    shop_id: string;
-    created_at: string;
-}
+export type MediaType = "IMAGE" | "VIDEO";
 
-/**
- * Instagram ストーリー（24時間限定）
- */
-export interface InstagramStory {
-    id: string;
-    shop_id: string;
-    instagram_media_id: string;
-    media_url: string;
-    media_type: "IMAGE" | "VIDEO";
-    timestamp: string;
-    expires_at: string;
-    fetched_at: string;
-    shop?: Restaurant;
-}
+// --- 営業時間 ---
 
-/**
- * 互換性のための Supabase Database Wrapper
- */
-export interface Database {
-    public: {
-        Tables: {
-            shops: { Row: Restaurant };
-            profiles: { Row: User };
-            reservations: { Row: Reservation };
-            seat_status: { Row: SeatStatus };
-            favorites: { Row: Favorite };
-            instagram_posts: { Row: InstagramPost };
-            partners: { Row: Partner };
-            partner_referrals: { Row: PartnerReferral };
-            partner_payouts: { Row: PartnerPayout };
-            analytics_events: { Row: AnalyticsEvent };
-            restaurant_images: { Row: RestaurantImage };
-            menus: { Row: Menu };
-            notifications: { Row: Notification };
-            follows: { Row: Follow };
-            instagram_stories: { Row: InstagramStory };
+export type DayHours = {
+  open: string;
+  close: string;
+  closed: boolean;
+};
+
+export type BusinessHours = {
+  mon: DayHours;
+  tue: DayHours;
+  wed: DayHours;
+  thu: DayHours;
+  fri: DayHours;
+  sat: DayHours;
+  sun: DayHours;
+};
+
+// --- テーブル型 ---
+
+export type Profile = {
+  id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  user_type: UserType;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Shop = {
+  id: string;
+  owner_id: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  phone: string | null;
+  business_hours: BusinessHours | null;
+  genre: string | null;
+  main_image: string | null;
+  plan_type: PlanType;
+  is_verified: boolean;
+  instagram_url: string | null;
+  instagram_username: string | null;
+  instagram_access_token: string | null;
+  instagram_token_expires_at: string | null;
+  instagram_user_id: string | null;
+  instagram_synced_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SeatStatus = {
+  id: string;
+  shop_id: string;
+  status: SeatStatusType;
+  available_seats: number | null;
+  wait_time_minutes: number | null;
+  updated_at: string;
+};
+
+export type Follow = {
+  id: string;
+  user_id: string;
+  shop_id: string;
+  created_at: string;
+};
+
+export type Favorite = {
+  id: string;
+  user_id: string;
+  shop_id: string;
+  created_at: string;
+};
+
+export type Reservation = {
+  id: string;
+  user_id: string;
+  shop_id: string;
+  reservation_date: string;
+  reservation_time: string;
+  party_size: number;
+  note: string | null;
+  status: ReservationStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InstagramPost = {
+  id: string;
+  shop_id: string;
+  instagram_post_id: string;
+  image_url: string | null;
+  caption: string | null;
+  permalink: string | null;
+  posted_at: string | null;
+  fetched_at: string;
+  created_at: string;
+};
+
+export type InstagramStory = {
+  id: string;
+  shop_id: string;
+  instagram_media_id: string;
+  media_url: string;
+  media_type: MediaType;
+  timestamp: string | null;
+  expires_at: string;
+  fetched_at: string;
+};
+
+export type Subscription = {
+  id: string;
+  shop_id: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  status: SubscriptionStatus;
+  plan_type: PlanType;
+  current_period_end: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string | null;
+  data: Record<string, unknown> | null;
+  is_read: boolean;
+  created_at: string;
+};
+
+export type AnalyticsEvent = {
+  id: string;
+  shop_id: string;
+  event_type: AnalyticsEventType;
+  user_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export type Partner = {
+  id: string;
+  user_id: string;
+  referral_code: string;
+  created_at: string;
+};
+
+export type PartnerReferral = {
+  id: string;
+  partner_id: string;
+  shop_id: string;
+  plan_type: PlanType | null;
+  contracted_at: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type PartnerPayout = {
+  id: string;
+  partner_id: string;
+  amount: number;
+  period_start: string;
+  period_end: string;
+  status: "pending" | "paid";
+  paid_at: string | null;
+  created_at: string;
+};
+
+// --- Supabase Database 型マッピング ---
+
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: Profile;
+        Insert: Partial<Profile> & { id: string; email: string };
+        Update: Partial<Profile>;
+      };
+      shops: {
+        Row: Shop;
+        Insert: Partial<Shop> & { owner_id: string; name: string };
+        Update: Partial<Shop>;
+      };
+      seat_status: {
+        Row: SeatStatus;
+        Insert: Partial<SeatStatus> & { shop_id: string };
+        Update: Partial<SeatStatus>;
+      };
+      follows: {
+        Row: Follow;
+        Insert: { user_id: string; shop_id: string };
+        Update: Partial<Follow>;
+      };
+      favorites: {
+        Row: Favorite;
+        Insert: { user_id: string; shop_id: string };
+        Update: Partial<Favorite>;
+      };
+      reservations: {
+        Row: Reservation;
+        Insert: Partial<Reservation> & {
+          user_id: string;
+          shop_id: string;
+          reservation_date: string;
+          reservation_time: string;
+          party_size: number;
         };
+        Update: Partial<Reservation>;
+      };
+      instagram_posts: {
+        Row: InstagramPost;
+        Insert: Partial<InstagramPost> & {
+          shop_id: string;
+          instagram_post_id: string;
+        };
+        Update: Partial<InstagramPost>;
+      };
+      instagram_stories: {
+        Row: InstagramStory;
+        Insert: Partial<InstagramStory> & {
+          shop_id: string;
+          instagram_media_id: string;
+          media_url: string;
+          expires_at: string;
+        };
+        Update: Partial<InstagramStory>;
+      };
+      subscriptions: {
+        Row: Subscription;
+        Insert: Partial<Subscription> & { shop_id: string };
+        Update: Partial<Subscription>;
+      };
+      notifications: {
+        Row: Notification;
+        Insert: Partial<Notification> & {
+          user_id: string;
+          type: NotificationType;
+          title: string;
+        };
+        Update: Partial<Notification>;
+      };
+      analytics_events: {
+        Row: AnalyticsEvent;
+        Insert: Partial<AnalyticsEvent> & {
+          shop_id: string;
+          event_type: AnalyticsEventType;
+        };
+        Update: Partial<AnalyticsEvent>;
+      };
+      partners: {
+        Row: Partner;
+        Insert: { user_id: string; referral_code: string };
+        Update: Partial<Partner>;
+      };
+      partner_referrals: {
+        Row: PartnerReferral;
+        Insert: Partial<PartnerReferral> & {
+          partner_id: string;
+          shop_id: string;
+        };
+        Update: Partial<PartnerReferral>;
+      };
+      partner_payouts: {
+        Row: PartnerPayout;
+        Insert: Partial<PartnerPayout> & {
+          partner_id: string;
+          amount: number;
+          period_start: string;
+          period_end: string;
+        };
+        Update: Partial<PartnerPayout>;
+      };
     };
-}
+  };
+};

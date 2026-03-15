@@ -1,89 +1,73 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
+  const { shopId } = await request.json();
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   if (!user) {
-    return NextResponse.json({ error: "認証エラー" }, { status: 401 });
+    return NextResponse.json({ error: "未認証" }, { status: 401 });
   }
 
+  // Check premium plan
   const { data: shop } = await supabase
     .from("shops")
-    .select("*")
-    .eq("owner_id", user.id)
+    .select("*, subscriptions(*)")
+    .eq("id", shopId)
     .single();
 
   if (!shop || shop.plan_type !== "premium") {
     return NextResponse.json(
-      { error: "プレミアムプラン限定です" },
+      { error: "プレミアムプランのみ利用可能です" },
       { status: 403 }
     );
   }
 
-  // 過去7日の分析データ
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  // Get recent analytics and posts in parallel
+  const [{ data: events }, { data: posts }] = await Promise.all([
+    supabase
+      .from("analytics_events")
+      .select("*")
+      .eq("shop_id", shopId)
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("instagram_posts")
+      .select("*")
+      .eq("shop_id", shopId)
+      .order("posted_at", { ascending: false })
+      .limit(10),
+  ]);
 
-  const { data: events } = await supabase
-    .from("analytics_events")
-    .select("event_type, created_at")
-    .eq("restaurant_id", shop.id)
-    .gte("created_at", sevenDaysAgo.toISOString());
-
-  // Anthropic SDK を動的インポート（未インストール時の対応）
-  try {
-    const viewCount =
-      events?.filter((e) => e.event_type === "view").length ?? 0;
-    const clickCount =
-      events?.filter((e) => e.event_type === "click").length ?? 0;
-    const reserveCount =
-      events?.filter((e) => e.event_type === "reserve").length ?? 0;
-    const favoriteCount =
-      events?.filter((e) => e.event_type === "favorite").length ?? 0;
-
-    const prompt = `あなたは飲食店のInstagramマーケティングの専門家です。
-以下の店舗データと直近7日間のアクセスデータを基に、今日のInstagram投稿の提案を1つ具体的にしてください。
+  const client = new Anthropic();
+  const message = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1024,
+    messages: [
+      {
+        role: "user",
+        content: `あなたは飲食店の集客アドバイザーです。以下のデータを分析して、Instagram投稿の最適化提案を日本語で3つ提示してください。
 
 店舗名: ${shop.name}
-ジャンル: ${shop.genre || "不明"}
-エリア: ${shop.address}
+ジャンル: ${shop.genre || "未設定"}
+直近の分析イベント: ${JSON.stringify(events?.slice(0, 20))}
+直近のInstagram投稿: ${JSON.stringify(posts?.map((p: Record<string, unknown>) => ({ caption: p.caption, posted_at: p.posted_at })))}
 
-直近7日間のデータ:
-- 閲覧数: ${viewCount}
-- クリック数: ${clickCount}
-- 予約数: ${reserveCount}
-- お気に入り数: ${favoriteCount}
+各提案には以下を含めてください:
+1. 提案タイトル
+2. 具体的なアクション
+3. 期待される効果`,
+      },
+    ],
+  });
 
-投稿提案には以下を含めてください:
-1. 推奨投稿時間
-2. 投稿テーマ・内容
-3. キャプション例（ハッシュタグ付き）
-4. 期待される効果
+  const suggestion =
+    message.content[0].type === "text" ? message.content[0].text : "";
 
-簡潔に300文字以内で回答してください。`;
-
-    const mod = await import("@anthropic-ai/sdk");
-    const AnthropicClient = mod.default;
-    const anthropic = new AnthropicClient();
-
-    const message = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 500,
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const firstBlock = message.content[0];
-    const suggestion = firstBlock.type === "text" ? firstBlock.text : "";
-    return NextResponse.json({ suggestion });
-  } catch {
-    // Anthropic SDK が未インストール or API Key 未設定の場合
-    return NextResponse.json({
-      suggestion:
-        "AI提案機能を利用するには、ANTHROPIC_API_KEY の設定と @anthropic-ai/sdk パッケージのインストールが必要です。",
-      error: "API設定が必要です",
-    });
-  }
+  return NextResponse.json({ suggestion });
 }

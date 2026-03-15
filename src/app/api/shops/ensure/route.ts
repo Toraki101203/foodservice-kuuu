@@ -1,60 +1,57 @@
-import { createClient } from "@supabase/supabase-js";
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-/**
- * 店舗レコードの確保 API
- * 店舗オーナーなのに shops レコードがない場合に自動作成する
- */
 export async function POST() {
-    try {
-        const supabase = await createServerClient();
-        const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-        if (!user) {
-            return NextResponse.json({ error: "未認証" }, { status: 401 });
-        }
+  if (!user) {
+    return NextResponse.json({ error: "未認証" }, { status: 401 });
+  }
 
-        // service_role で操作（RLS バイパス）
-        const supabaseAdmin = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
+  // Check if shop already exists
+  const { data: existing } = await supabase
+    .from("shops")
+    .select("*")
+    .eq("owner_id", user.id)
+    .single();
 
-        // 既存の店舗を確認
-        const { data: existing } = await supabaseAdmin
-            .from("shops")
-            .select("*")
-            .eq("owner_id", user.id)
-            .limit(1)
-            .single();
+  if (existing) {
+    return NextResponse.json({ shop: existing });
+  }
 
-        if (existing) {
-            return NextResponse.json({ shop: existing });
-        }
+  // Create new shop
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .single();
 
-        // 新規作成
-        const displayName = user.user_metadata?.display_name || "マイ店舗";
-        const { data: newShop, error } = await supabaseAdmin
-            .from("shops")
-            .insert({
-                owner_id: user.id,
-                name: displayName,
-                genre: "",
-                address: "",
-                latitude: 0,
-                longitude: 0,
-                status: "active",
-            })
-            .select()
-            .single();
+  const { data: shop, error } = await supabase
+    .from("shops")
+    .insert({
+      owner_id: user.id,
+      name: profile?.display_name
+        ? `${profile.display_name}の店舗`
+        : "新しい店舗",
+    })
+    .select()
+    .single();
 
-        if (error) {
-            return NextResponse.json({ error: "店舗作成に失敗しました" }, { status: 500 });
-        }
+  if (error) {
+    return NextResponse.json(
+      { error: "店舗の作成に失敗しました" },
+      { status: 500 }
+    );
+  }
 
-        return NextResponse.json({ shop: newShop });
-    } catch {
-        return NextResponse.json({ error: "サーバーエラー" }, { status: 500 });
-    }
+  // Create initial seat_status
+  await supabase.from("seat_status").insert({
+    shop_id: shop.id,
+    status: "closed",
+  });
+
+  return NextResponse.json({ shop });
 }

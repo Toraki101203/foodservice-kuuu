@@ -1,23 +1,35 @@
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { User } from "lucide-react";
 
-interface AvatarProps {
-    src: string | null | undefined;
-    alt: string;
-    size?: number;
-    className?: string;
-}
+type AvatarProps = {
+  src?: string | null;
+  alt?: string;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+};
 
-export function Avatar({ src, alt, size = 40, className }: AvatarProps) {
-    return (
-        <div className={cn("relative overflow-hidden rounded-full bg-gray-200", className)} style={{ width: size, height: size }}>
-            {src ? (
-                <Image src={src} alt={alt} fill className="object-cover" sizes={`${size}px`} />
-            ) : (
-                <div className="flex h-full w-full items-center justify-center text-gray-400">
-                    {alt.charAt(0).toUpperCase()}
-                </div>
-            )}
+const sizeStyles = {
+  sm: "size-8",
+  md: "size-10",
+  lg: "size-20",
+};
+
+export function Avatar({ src, alt = "", size = "md", className }: AvatarProps) {
+  return (
+    <div
+      className={cn(
+        "shrink-0 overflow-hidden rounded-full bg-gray-100",
+        sizeStyles[size],
+        className
+      )}
+    >
+      {src ? (
+        <img src={src} alt={alt} className="size-full object-cover" />
+      ) : (
+        <div className="flex size-full items-center justify-center">
+          <User className="size-1/2 text-gray-400" />
         </div>
-    );
+      )}
+    </div>
+  );
 }

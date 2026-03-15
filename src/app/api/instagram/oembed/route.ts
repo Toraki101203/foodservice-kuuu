@@ -1,35 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-export async function POST(request: NextRequest) {
-    const { url } = await request.json();
+export async function GET(request: NextRequest) {
+  const url = request.nextUrl.searchParams.get("url");
+  if (!url) {
+    return NextResponse.json({ error: "URL is required" }, { status: 400 });
+  }
 
-    if (!url || !url.includes("instagram.com")) {
-        return NextResponse.json({ error: "無効なURLです" }, { status: 400 });
-    }
+  const res = await fetch(
+    `https://graph.facebook.com/v21.0/instagram_oembed?url=${encodeURIComponent(url)}&access_token=${process.env.INSTAGRAM_APP_ID}|${process.env.INSTAGRAM_APP_SECRET}`,
+    { next: { revalidate: 3600 } }
+  );
 
-    // oEmbed API (Facebook App Token required)
-    // If no token, fall back to basic URL extraction
-    const appToken = process.env.FACEBOOK_APP_TOKEN;
+  if (!res.ok) {
+    return NextResponse.json(
+      { error: "oEmbed fetch failed" },
+      { status: 502 }
+    );
+  }
 
-    if (appToken) {
-        try {
-            const oembedUrl = `https://graph.facebook.com/v18.0/instagram_oembed?url=${encodeURIComponent(url)}&access_token=${appToken}`;
-            const res = await fetch(oembedUrl);
-            if (res.ok) {
-                const data = await res.json();
-                return NextResponse.json(data);
-            }
-        } catch {
-            // oEmbed API 失敗時はフォールバック
-        }
-    }
-
-    // フォールバック: URLの検証のみ行い、基本情報を返す
-    // ユーザーは必要に応じて画像URLを手動で指定
-    return NextResponse.json({
-        url,
-        title: "",
-        thumbnail_url: null,
-        author_name: "",
-    });
+  const data = await res.json();
+  return NextResponse.json(data);
 }

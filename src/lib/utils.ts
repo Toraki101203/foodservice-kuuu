@@ -1,55 +1,56 @@
-import { type ClassValue, clsx } from "clsx";
+import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { formatDate } from "@/lib/format";
+import type { SeatStatusType } from "@/types/database";
 
 /**
- * クラス名を結合するユーティリティ関数
- * clsxとtailwind-mergeを組み合わせて、Tailwindクラスの競合を解決
+ * Tailwind CSS クラス結合ユーティリティ
+ * clsx で条件分岐 → tailwind-merge で重複排除
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 /**
- * 相対時間を表示する（例：「3分前」「1時間前」）
+ * 空席ステータスの日本語ラベルを返す
  */
-export function formatRelativeTime(date: Date | string): string {
-  const d = new Date(date);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMins < 1) return "たった今";
-  if (diffMins < 60) return `${diffMins}分前`;
-  if (diffHours < 24) return `${diffHours}時間前`;
-  if (diffDays < 7) return `${diffDays}日前`;
-  return formatDate(d.toISOString());
-}
-
-/**
- * 席状況のステータスラベルを取得
- */
-export function getSeatStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
+export function getSeatStatusLabel(status: SeatStatusType): string {
+  const labels: Record<SeatStatusType, string> = {
     available: "空席あり",
     busy: "やや混雑",
     full: "満席",
-    closed: "閉店中",
+    closed: "休業",
   };
-  return labels[status] || status;
+  return labels[status];
 }
 
 /**
- * 席状況のカラーを取得
+ * 空席ステータスに対応する背景色クラスを返す
  */
-export function getSeatStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    available: "text-green-500",
-    busy: "text-yellow-500",
-    full: "text-red-500",
-    closed: "text-gray-500",
+export function getSeatStatusColor(status: SeatStatusType): string {
+  const colors: Record<SeatStatusType, string> = {
+    available: "bg-green-500",
+    busy: "bg-yellow-500",
+    full: "bg-red-500",
+    closed: "bg-gray-400",
   };
-  return colors[status] || "text-gray-500";
+  return colors[status];
+}
+
+/**
+ * 相対時間を日本語で返す（例: "3分前", "2時間前"）
+ */
+export function formatRelativeTime(date: Date | string): string {
+  const now = new Date();
+  const target = typeof date === "string" ? new Date(date) : date;
+  const diffMs = now.getTime() - target.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+
+  if (diffMin < 1) return "たった今";
+  if (diffMin < 60) return `${diffMin}分前`;
+
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}時間前`;
+
+  const diffDay = Math.floor(diffHour / 24);
+  return `${diffDay}日前`;
 }

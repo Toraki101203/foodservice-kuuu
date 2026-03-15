@@ -26,10 +26,22 @@
       "Bash(code:*)",
       "Edit",
       "Write",
-      "NotebookEdit"
+      "NotebookEdit",
+      "Bash(npm ls react-easy-crop)",
+      "Bash(for file in /c/Users/enhan/Documents/foodservice-kuuu/src/components/dashboard/sidebar.tsx /c/Users/enhan/Documents/foodservice-kuuu/src/components/discover/nearby-map.tsx /c/Users/enhan/Documents/foodservice-kuuu/src/components/discover/shop-grid-card.tsx /c/Users/enhan/Documents/foodservice-kuuu/src/components/feed/popular-tab.tsx /c/Users/enhan/Documents/foodservice-kuuu/src/components/shop/instagram-grid.tsx /c/Users/enhan/Documents/foodservice-kuuu/src/components/shop/post-modal.tsx)",
+      "Bash(do)",
+      "Bash(basename \"$file\")",
+      "Bash(done)",
+      "Bash(/tmp/audit.sh:*)",
+      "Bash(bash /tmp/audit.sh)",
+      "Bash(/tmp/final_audit.sh:*)",
+      "Bash(bash /tmp/final_audit.sh)",
+      "Bash(/tmp/report.txt:*)",
+      "Read(//c/Users/enhan/Documents/foodservice-kuuu/**)"
     ],
     "additionalDirectories": [
-      "c:\\Users\\enhan\\Documents\\foodservice-kuuu\\src\\app\\shop"
+      "c:\\Users\\enhan\\Documents\\foodservice-kuuu\\src\\app\\shop",
+      "\\tmp"
     ]
   }
 }

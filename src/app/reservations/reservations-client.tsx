@@ -1,126 +1,168 @@
 "use client";
+
 import { useState, useMemo } from "react";
-import { ArrowLeft, Calendar, Users, Clock } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Tabs, Card, CardContent, Button } from "@/components/ui";
-import { createClient } from "@/lib/supabase/client";
-import { useToast } from "@/components/ui/toast";
+import { Calendar, Users, ClipboardList } from "lucide-react";
+import { Tabs } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/feed/empty-state";
-import type { Reservation, Restaurant } from "@/types/database";
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import type { Reservation, Shop } from "@/types/database";
 
 type ReservationWithShop = Reservation & {
-    shop: Pick<Restaurant, "id" | "name" | "main_image" | "address">;
+  shop: Pick<Shop, "name" | "main_image">;
 };
 
-interface ReservationsClientProps {
-    reservations: ReservationWithShop[];
-}
+const STATUS_LABELS: Record<string, string> = {
+  pending: "確認中",
+  confirmed: "確定",
+  cancelled: "キャンセル",
+  completed: "完了",
+};
 
-const tabs = [
-    { key: "upcoming", label: "今後の予約" },
-    { key: "past", label: "過去の予約" },
-];
+const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700",
+  confirmed: "bg-green-100 text-green-700",
+  cancelled: "bg-gray-100 text-gray-500",
+  completed: "bg-blue-100 text-blue-700",
+};
 
-export function ReservationsClient({ reservations: initial }: ReservationsClientProps) {
-    const [reservations, setReservations] = useState(initial);
-    const [activeTab, setActiveTab] = useState("upcoming");
-    const router = useRouter();
-    const { toast } = useToast();
+const TABS = ["今後の予約", "過去の予約"];
 
-    const today = new Date().toISOString().split("T")[0];
+export function ReservationsClient({
+  reservations: initial,
+}: {
+  reservations: ReservationWithShop[];
+}) {
+  const [reservations, setReservations] = useState(initial);
+  const [activeTab, setActiveTab] = useState(TABS[0]);
+  const [cancelTarget, setCancelTarget] = useState<ReservationWithShop | null>(null);
 
-    const filtered = useMemo(() => {
-        return reservations.filter((r) =>
-            activeTab === "upcoming" ? r.reservation_date >= today : r.reservation_date < today,
-        );
-    }, [reservations, activeTab, today]);
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-    const handleCancel = async (id: string) => {
-        const prev = reservations;
-        setReservations((r) => r.map((res) => (res.id === id ? { ...res, status: "cancelled" as const } : res)));
-
-        const supabase = createClient();
-        const { error } = await supabase.from("reservations").update({ status: "cancelled" }).eq("id", id);
-        if (error) {
-            setReservations(prev);
-            toast("キャンセルに失敗しました", "error");
-        } else {
-            toast("予約をキャンセルしました");
-        }
-    };
-
-    const statusLabel: Record<string, string> = {
-        pending: "確認待ち",
-        confirmed: "確定",
-        cancelled: "キャンセル済",
-        completed: "完了",
-    };
-
-    const statusColor: Record<string, string> = {
-        pending: "text-yellow-600 bg-yellow-50",
-        confirmed: "text-green-600 bg-green-50",
-        cancelled: "text-gray-500 bg-gray-100",
-        completed: "text-blue-600 bg-blue-50",
-    };
-
-    return (
-        <div className="px-4 py-4">
-            <div className="mb-4 flex items-center gap-3">
-                <button onClick={() => router.back()} aria-label="戻る">
-                    <ArrowLeft className="size-6 text-gray-600" />
-                </button>
-                <h1 className="text-lg font-bold text-gray-900">予約一覧</h1>
-            </div>
-
-            <Tabs tabs={tabs} activeKey={activeTab} onChange={setActiveTab} />
-
-            <div className="mt-4 space-y-3">
-                {filtered.length === 0 ? (
-                    <EmptyState
-                        title={activeTab === "upcoming" ? "予約がありません" : "過去の予約はありません"}
-                        description={activeTab === "upcoming" ? "お気に入りのお店を予約してみましょう" : ""}
-                        actionLabel={activeTab === "upcoming" ? "お店を探す" : undefined}
-                        actionHref={activeTab === "upcoming" ? "/search" : undefined}
-                    />
-                ) : (
-                    filtered.map((res) => (
-                        <Card key={res.id}>
-                            <CardContent>
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <h3 className="font-bold text-gray-900">{res.shop.name}</h3>
-                                        <p className="mt-1 text-xs text-gray-500">{res.shop.address}</p>
-                                    </div>
-                                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${statusColor[res.status]}`}>
-                                        {statusLabel[res.status]}
-                                    </span>
-                                </div>
-                                <div className="mt-3 flex gap-4 text-sm text-gray-600">
-                                    <span className="flex items-center gap-1">
-                                        <Calendar className="size-4 text-gray-400" />
-                                        {res.reservation_date}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <Clock className="size-4 text-gray-400" />
-                                        {res.reservation_time}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <Users className="size-4 text-gray-400" />
-                                        {res.party_size}名
-                                    </span>
-                                </div>
-                                {res.status === "pending" && (
-                                    <div className="mt-3 flex justify-end">
-                                        <Button variant="danger" size="sm" onClick={() => handleCancel(res.id)}>
-                                            キャンセル
-                                        </Button>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    ))
-                )}
-            </div>
-        </div>
+  const filtered = useMemo(() => {
+    if (activeTab === "今後の予約") {
+      return reservations.filter(
+        (r) =>
+          r.reservation_date >= today &&
+          r.status !== "cancelled" &&
+          r.status !== "completed"
+      );
+    }
+    return reservations.filter(
+      (r) =>
+        r.reservation_date < today ||
+        r.status === "cancelled" ||
+        r.status === "completed"
     );
+  }, [reservations, activeTab, today]);
+
+  const handleCancel = async () => {
+    if (!cancelTarget) return;
+    const prev = reservations;
+    setReservations((rs) =>
+      rs.map((r) =>
+        r.id === cancelTarget.id ? { ...r, status: "cancelled" as const } : r
+      )
+    );
+    setCancelTarget(null);
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("reservations")
+      .update({ status: "cancelled" })
+      .eq("id", cancelTarget.id);
+    if (error) setReservations(prev);
+  };
+
+  return (
+    <div className="pb-20">
+      <h1 className="px-4 py-4 text-xl font-bold text-gray-900">予約一覧</h1>
+      <Tabs tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {filtered.length === 0 ? (
+        <EmptyState
+          icon={<ClipboardList className="size-12" />}
+          title={
+            activeTab === "今後の予約"
+              ? "今後の予約はありません"
+              : "過去の予約はありません"
+          }
+          description="お店を見つけて予約してみましょう"
+          actionLabel="お店を探す"
+          actionHref="/search"
+        />
+      ) : (
+        <div className="divide-y divide-gray-100 px-4">
+          {filtered.map((r) => (
+            <div key={r.id} className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-3">
+                <div className="size-12 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                  {r.shop?.main_image && (
+                    <img
+                      src={r.shop.main_image}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">
+                    {r.shop?.name}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Calendar className="size-3" />
+                    <span>
+                      {r.reservation_date} {r.reservation_time}
+                    </span>
+                    <Users className="size-3" />
+                    <span>{r.party_size}名</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-xs font-medium",
+                    STATUS_COLORS[r.status]
+                  )}
+                >
+                  {STATUS_LABELS[r.status]}
+                </span>
+                {r.status === "pending" && (
+                  <button
+                    onClick={() => setCancelTarget(r)}
+                    className="text-xs text-red-500"
+                  >
+                    取消
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog
+        open={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        title="予約をキャンセル"
+        description="この予約をキャンセルしますか？"
+      >
+        <div className="flex gap-2 pt-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setCancelTarget(null)}
+          >
+            戻る
+          </Button>
+          <Button variant="danger" className="flex-1" onClick={handleCancel}>
+            キャンセルする
+          </Button>
+        </div>
+      </Dialog>
+    </div>
+  );
 }

@@ -3,16 +3,15 @@ import { redirect } from "next/navigation";
 import { ReservationsClient } from "./reservations-client";
 
 export default async function ReservationsPage() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-    if (!user) redirect("/login");
+  const { data: reservations } = await supabase
+    .from("reservations")
+    .select("*, shop:shops(name, main_image)")
+    .eq("user_id", user.id)
+    .order("reservation_date", { ascending: false });
 
-    const { data: reservations } = await supabase
-        .from("reservations")
-        .select("*, shop:shops(id, name, main_image, address)")
-        .eq("user_id", user.id)
-        .order("reservation_date", { ascending: true });
-
-    return <ReservationsClient reservations={reservations ?? []} />;
+  return <ReservationsClient reservations={reservations ?? []} />;
 }

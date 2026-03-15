@@ -1,68 +1,36 @@
-import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe/server";
 import { createClient } from "@/lib/supabase/server";
+import { stripe } from "@/lib/stripe/server";
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
-    try {
-        const supabase = await createClient();
-        const {
-            data: { user },
-        } = await supabase.auth.getUser();
+export async function POST(request: Request) {
+  const { shopId } = await request.json();
 
-        if (!user) {
-            return NextResponse.json(
-                { error: "ログインが必要です" },
-                { status: 401 }
-            );
-        }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-        // 店舗のサブスクリプション情報を取得
-        const { data: shop } = await supabase
-            .from("shops")
-            .select("id")
-            .eq("owner_id", user.id)
-            .limit(1)
-            .single();
+  if (!user) {
+    return NextResponse.json({ error: "未認証" }, { status: 401 });
+  }
 
-        if (!shop) {
-            return NextResponse.json(
-                { error: "店舗が見つかりません" },
-                { status: 404 }
-            );
-        }
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("shop_id", shopId)
+    .single();
 
-        const { data: subscription } = await supabase
-            .from("subscriptions")
-            .select("stripe_customer_id")
-            .eq("shop_id", shop.id)
-            .single();
+  if (!subscription?.stripe_customer_id) {
+    return NextResponse.json(
+      { error: "サブスクリプションが見つかりません" },
+      { status: 404 }
+    );
+  }
 
-        if (!subscription?.stripe_customer_id) {
-            return NextResponse.json(
-                { error: "サブスクリプションが見つかりません" },
-                { status: 404 }
-            );
-        }
+  const session = await stripe.billingPortal.sessions.create({
+    customer: subscription.stripe_customer_id,
+    return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/shop-dashboard/billing`,
+  });
 
-        if (subscription.stripe_customer_id === "cus_local_dev") {
-            return NextResponse.json(
-                { error: "ローカルテスト用のダミー決済データのため、実際のStripeポータル（カード情報管理）画面は開けません。" },
-                { status: 400 }
-            );
-        }
-
-        // Stripe Customer Portalセッションを作成
-        const session = await stripe.billingPortal.sessions.create({
-            customer: subscription.stripe_customer_id,
-            return_url: `${request.nextUrl.origin}/shop-dashboard/billing`,
-        });
-
-        return NextResponse.json({ url: session.url });
-    } catch (error) {
-        console.error("Portal error:", error);
-        return NextResponse.json(
-            { error: "ポータル生成でエラーが発生しました" },
-            { status: 500 }
-        );
-    }
+  return NextResponse.json({ url: session.url });
 }

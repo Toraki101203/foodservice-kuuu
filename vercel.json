@@ -1,8 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/instagram/sync",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  "framework": "nextjs",
+  "regions": ["hnd1"]
 }

@@ -1,160 +1,126 @@
-import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe/server";
 import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
+import type Stripe from "stripe";
 
-/**
- * Stripe Price ID からプランIDを逆引きする
- * 環境変数に設定されたPrice IDとマッチングし、該当するプラン名を返す
- */
-function resolvePlanFromPriceId(priceId: string): string {
-    const standardPriceId = process.env.STRIPE_STANDARD_PRICE_ID;
-    const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID;
-
-    if (standardPriceId && priceId === standardPriceId) return "standard";
-    if (premiumPriceId && priceId === premiumPriceId) return "premium";
-
-    // マッチしない場合はデフォルト
-    return "standard";
+// Stripe v20+ の型定義に current_period_end が含まれない場合のヘルパー
+function getPeriodEnd(sub: Stripe.Subscription): string {
+  const raw = sub as unknown as Record<string, unknown>;
+  const epoch = typeof raw.current_period_end === "number"
+    ? raw.current_period_end
+    : Math.floor(Date.now() / 1000);
+  return new Date(epoch * 1000).toISOString();
 }
 
-export async function POST(request: NextRequest) {
-    const body = await request.text();
-    const sig = request.headers.get("stripe-signature");
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-    if (!sig) {
-        return NextResponse.json(
-            { error: "署名がありません" },
-            { status: 400 }
+export async function POST(request: Request) {
+  const body = await request.text();
+  const signature = request.headers.get("stripe-signature")!;
+
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const shopId = session.metadata?.shop_id;
+      if (shopId && session.subscription) {
+        const sub = await stripe.subscriptions.retrieve(
+          session.subscription as string
         );
+        const priceId = sub.items.data[0]?.price.id;
+        const planType =
+          priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID
+            ? "premium"
+            : "standard";
+
+        await supabaseAdmin.from("subscriptions").upsert(
+          {
+            shop_id: shopId,
+            stripe_subscription_id: sub.id,
+            stripe_customer_id: session.customer as string,
+            status: "active",
+            plan_type: planType,
+            current_period_end: getPeriodEnd(sub),
+          },
+          { onConflict: "shop_id" }
+        );
+
+        await supabaseAdmin
+          .from("shops")
+          .update({ plan_type: planType })
+          .eq("id", shopId);
+      }
+      break;
     }
 
-    let event;
+    case "customer.subscription.updated": {
+      const sub = event.data.object as Stripe.Subscription;
+      const { data: existing } = await supabaseAdmin
+        .from("subscriptions")
+        .select("shop_id")
+        .eq("stripe_subscription_id", sub.id)
+        .single();
 
-    try {
-        // Webhook署名の検証（Webhook Secretが設定されている場合）
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-        if (webhookSecret) {
-            event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-        } else {
-            // 開発環境: 署名検証をスキップ
-            event = JSON.parse(body);
+      if (existing) {
+        const status =
+          sub.status === "active"
+            ? "active"
+            : sub.status === "past_due"
+              ? "past_due"
+              : "canceled";
+        await supabaseAdmin
+          .from("subscriptions")
+          .update({
+            status,
+            current_period_end: getPeriodEnd(sub),
+          })
+          .eq("stripe_subscription_id", sub.id);
+
+        if (status === "canceled") {
+          await supabaseAdmin
+            .from("shops")
+            .update({ plan_type: "free" })
+            .eq("id", existing.shop_id);
         }
-    } catch (err) {
-        console.error("Webhook signature verification failed:", err);
-        return NextResponse.json(
-            { error: "署名検証に失敗しました" },
-            { status: 400 }
-        );
+      }
+      break;
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-    // WebhookにはCookieがないため、DB更新権限（RLSバイパス）を持つサービスロールキーを使用します
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseServiceKey) {
-        console.error("SUPABASE_SERVICE_ROLE_KEY が設定されていません");
-        return NextResponse.json({ error: "サーバー設定エラー" }, { status: 500 });
+    case "customer.subscription.deleted": {
+      const sub = event.data.object as Stripe.Subscription;
+      const { data: existing } = await supabaseAdmin
+        .from("subscriptions")
+        .select("shop_id")
+        .eq("stripe_subscription_id", sub.id)
+        .single();
+
+      if (existing) {
+        await supabaseAdmin
+          .from("subscriptions")
+          .update({ status: "canceled" })
+          .eq("stripe_subscription_id", sub.id);
+
+        await supabaseAdmin
+          .from("shops")
+          .update({ plan_type: "free" })
+          .eq("id", existing.shop_id);
+      }
+      break;
     }
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
 
-    try {
-        switch (event.type) {
-            case "checkout.session.completed": {
-                const session = event.data.object;
-                const shopId = session.metadata?.shop_id;
-                const planId = session.metadata?.plan_id || "standard";
-
-                if (shopId && session.subscription) {
-                    // 既存のサブスクリプションを確認
-                    const { data: existingSub } = await supabase
-                        .from("subscriptions")
-                        .select("id")
-                        .eq("shop_id", shopId)
-                        .maybeSingle();
-
-                    const subscriptionData = {
-                        shop_id: shopId,
-                        stripe_customer_id: session.customer as string,
-                        stripe_subscription_id: session.subscription as string,
-                        plan: planId,
-                        status: "active",
-                        current_period_start: new Date().toISOString(),
-                    };
-
-                    if (existingSub) {
-                        await supabase
-                            .from("subscriptions")
-                            .update(subscriptionData)
-                            .eq("id", existingSub.id);
-                    } else {
-                        await supabase
-                            .from("subscriptions")
-                            .insert(subscriptionData);
-                    }
-                }
-                break;
-            }
-
-            case "customer.subscription.updated": {
-                const subscription = event.data.object;
-
-                // Price IDからプランを特定
-                const priceId = subscription.items?.data?.[0]?.price?.id;
-                const plan = priceId
-                    ? resolvePlanFromPriceId(priceId)
-                    : undefined;
-
-                const updateData: Record<string, string> = {
-                    status:
-                        subscription.status === "active"
-                            ? "active"
-                            : subscription.status,
-                    current_period_start: new Date(
-                        subscription.current_period_start * 1000
-                    ).toISOString(),
-                    current_period_end: new Date(
-                        subscription.current_period_end * 1000
-                    ).toISOString(),
-                };
-
-                // プランが特定できた場合のみ更新
-                if (plan) {
-                    updateData.plan = plan;
-                }
-
-                await supabase
-                    .from("subscriptions")
-                    .update(updateData)
-                    .eq("stripe_subscription_id", subscription.id);
-                break;
-            }
-
-            case "customer.subscription.deleted": {
-                const subscription = event.data.object;
-                await supabase
-                    .from("subscriptions")
-                    .update({ status: "cancelled" })
-                    .eq("stripe_subscription_id", subscription.id);
-                break;
-            }
-
-            case "invoice.payment_failed": {
-                const invoice = event.data.object;
-                if (invoice.subscription) {
-                    await supabase
-                        .from("subscriptions")
-                        .update({ status: "past_due" })
-                        .eq("stripe_subscription_id", invoice.subscription);
-                }
-                break;
-            }
-        }
-
-        return NextResponse.json({ received: true });
-    } catch (error) {
-        console.error("Webhook processing error:", error);
-        return NextResponse.json(
-            { error: "Webhook処理でエラーが発生しました" },
-            { status: 500 }
-        );
-    }
+  return NextResponse.json({ received: true });
 }
