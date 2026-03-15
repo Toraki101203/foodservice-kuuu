@@ -51,13 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [setUser, setLoading]);
 
+  const user = useAuthStore((s) => s.user);
+  const isLoading = useAuthStore((s) => s.isLoading);
+
   useEffect(() => {
-    const user = useAuthStore.getState().user;
-    const isLoading = useAuthStore.getState().isLoading;
     if (!isLoading && !user && PROTECTED_ROUTES.some((r) => pathname.startsWith(r))) {
       router.push("/login");
     }
-  }, [pathname, router]);
+  }, [pathname, router, user, isLoading]);
 
   return <>{children}</>;
 }

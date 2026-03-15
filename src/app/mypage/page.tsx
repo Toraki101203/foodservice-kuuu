@@ -13,5 +13,6 @@ export default async function MypagePage() {
     .eq("id", user.id)
     .single();
 
-  return <MypageClient profile={profile!} />;
+  if (!profile) redirect("/login");
+  return <MypageClient profile={profile} />;
 }

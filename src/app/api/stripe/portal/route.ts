@@ -14,6 +14,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "未認証" }, { status: 401 });
   }
 
+  // 所有権チェック
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("id")
+    .eq("id", shopId)
+    .eq("owner_id", user.id)
+    .single();
+
+  if (!shop) {
+    return NextResponse.json({ error: "権限がありません" }, { status: 403 });
+  }
+
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("stripe_customer_id")

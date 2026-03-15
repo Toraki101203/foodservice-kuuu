@@ -71,7 +71,7 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
         const res = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ priceId: plan.priceId, shopId }),
+          body: JSON.stringify({ planId: planType, shopId }),
         });
 
         if (!res.ok) {

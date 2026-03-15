@@ -33,22 +33,22 @@ export async function syncShopPosts(supabase: SupabaseClient, shop: Shop) {
       p.media_type === "VIDEO"
   );
 
-  let synced = 0;
-  for (const post of posts) {
-    const { error } = await supabase.from("instagram_posts").upsert(
-      {
-        shop_id: shop.id,
-        instagram_post_id: post.id,
-        image_url: post.media_url,
-        caption: post.caption ?? null,
-        permalink: post.permalink,
-        posted_at: post.timestamp,
-        fetched_at: new Date().toISOString(),
-      },
-      { onConflict: "shop_id,instagram_post_id" }
-    );
-    if (!error) synced++;
-  }
+  // バッチ upsert（N+1 回避）
+  const now = new Date().toISOString();
+  const records = posts.map((post: { id: string; media_url: string; caption?: string; permalink: string; timestamp: string }) => ({
+    shop_id: shop.id,
+    instagram_post_id: post.id,
+    image_url: post.media_url,
+    caption: post.caption ?? null,
+    permalink: post.permalink,
+    posted_at: post.timestamp,
+    fetched_at: now,
+  }));
+
+  const { error } = await supabase
+    .from("instagram_posts")
+    .upsert(records, { onConflict: "shop_id,instagram_post_id" });
+  const synced = error ? 0 : records.length;
 
   // 最終同期日時を更新
   await supabase

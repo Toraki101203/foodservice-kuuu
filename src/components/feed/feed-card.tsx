@@ -25,7 +25,10 @@ export function FeedCard({ post, isFavorited = false, distance }: FeedCardProps)
     setLiked(!liked);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLiked(prev);
+      return;
+    }
 
     if (prev) {
       const { error } = await supabase

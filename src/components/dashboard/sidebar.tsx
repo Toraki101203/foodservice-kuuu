@@ -28,7 +28,7 @@ const NAV_ITEMS = [
   { href: "/shop-dashboard/billing", icon: CreditCard, label: "料金プラン" },
 ];
 
-export function Sidebar({ shop }: { shop: Shop }) {
+export function Sidebar({ shop }: { shop: Omit<Shop, "instagram_access_token"> }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 

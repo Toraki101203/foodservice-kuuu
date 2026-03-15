@@ -6,6 +6,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
   }
 
+  // ドメインホワイトリスト検証（SSRF 防止）
+  try {
+    const parsed = new URL(url);
+    if (!["www.instagram.com", "instagram.com"].includes(parsed.hostname)) {
+      return NextResponse.json({ error: "無効なURLです" }, { status: 400 });
+    }
+  } catch {
+    return NextResponse.json({ error: "無効なURLです" }, { status: 400 });
+  }
+
   const res = await fetch(
     `https://graph.facebook.com/v21.0/instagram_oembed?url=${encodeURIComponent(url)}&access_token=${process.env.INSTAGRAM_APP_ID}|${process.env.INSTAGRAM_APP_SECRET}`,
     { next: { revalidate: 3600 } }

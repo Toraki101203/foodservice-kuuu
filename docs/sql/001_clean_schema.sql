@@ -428,22 +428,22 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', tru
 INSERT INTO storage.buckets (id, name, public) VALUES ('shop-photos', 'shop-photos', true)
   ON CONFLICT (id) DO NOTHING;
 
--- avatars policies
+-- avatars policies（所有者制限: フォルダ名 = ユーザーID）
 CREATE POLICY "avatars_select_all" ON storage.objects FOR SELECT
   USING (bucket_id = 'avatars');
-CREATE POLICY "avatars_insert_auth" ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id = 'avatars' AND auth.role() = 'authenticated');
-CREATE POLICY "avatars_update_auth" ON storage.objects FOR UPDATE
-  USING (bucket_id = 'avatars' AND auth.role() = 'authenticated');
-CREATE POLICY "avatars_delete_auth" ON storage.objects FOR DELETE
-  USING (bucket_id = 'avatars' AND auth.role() = 'authenticated');
+CREATE POLICY "avatars_insert_own" ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "avatars_update_own" ON storage.objects FOR UPDATE
+  USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "avatars_delete_own" ON storage.objects FOR DELETE
+  USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
 
--- shop-photos policies
+-- shop-photos policies（所有者制限: フォルダ名 = ユーザーID）
 CREATE POLICY "shop_photos_select_all" ON storage.objects FOR SELECT
   USING (bucket_id = 'shop-photos');
-CREATE POLICY "shop_photos_insert_auth" ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id = 'shop-photos' AND auth.role() = 'authenticated');
-CREATE POLICY "shop_photos_update_auth" ON storage.objects FOR UPDATE
-  USING (bucket_id = 'shop-photos' AND auth.role() = 'authenticated');
-CREATE POLICY "shop_photos_delete_auth" ON storage.objects FOR DELETE
-  USING (bucket_id = 'shop-photos' AND auth.role() = 'authenticated');
+CREATE POLICY "shop_photos_insert_own" ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'shop-photos' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "shop_photos_update_own" ON storage.objects FOR UPDATE
+  USING (bucket_id = 'shop-photos' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "shop_photos_delete_own" ON storage.objects FOR DELETE
+  USING (bucket_id = 'shop-photos' AND (storage.foldername(name))[1] = auth.uid()::text);

@@ -14,10 +14,10 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/login");
 
-  // 店舗データの取得・作成
+  // 店舗データの取得・作成（instagram_access_token を除外してクライアント露出を防止）
   let { data: shop } = await supabase
     .from("shops")
-    .select("*")
+    .select("id, name, plan_type, main_image, genre, description, address, phone, budget, business_hours, owner_id, instagram_username, instagram_user_id, instagram_url, instagram_synced_at, instagram_token_expires_at, latitude, longitude, is_verified, created_at, updated_at")
     .eq("owner_id", user.id)
     .single();
 

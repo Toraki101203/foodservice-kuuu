@@ -14,11 +14,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "未認証" }, { status: 401 });
   }
 
-  // Check premium plan
+  // 所有権 + プレミアムプランチェック
   const { data: shop } = await supabase
     .from("shops")
     .select("*, subscriptions(*)")
     .eq("id", shopId)
+    .eq("owner_id", user.id)
     .single();
 
   if (!shop || shop.plan_type !== "premium") {

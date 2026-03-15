@@ -15,7 +15,7 @@ export default async function AdminPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile) redirect("/");
+  if (!profile || profile.user_type !== "admin") redirect("/");
 
   const [{ data: shops }, { data: profiles }, { data: subscriptions }] =
     await Promise.all([
