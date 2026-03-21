@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ReservationsClient } from "./reservations-client";
 
-export default async function ReservationsPage() {
+export default async function VisitsPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -14,30 +14,26 @@ export default async function ReservationsPage() {
     .from("shops")
     .select("id, name, plan_type")
     .eq("owner_id", user.id)
-    .single();
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   if (!shop) redirect("/");
 
-  // 直近7日間の予約を取得
-  const today = new Date();
-  const weekAgo = new Date(today);
-  weekAgo.setDate(weekAgo.getDate() - 1);
-  const weekLater = new Date(today);
-  weekLater.setDate(weekLater.getDate() + 7);
+  // 今日の来店通知を取得
+  const today = new Date().toISOString().slice(0, 10);
 
-  const { data: reservations } = await supabase
+  const { data: visits } = await supabase
     .from("reservations")
-    .select("*, profiles:user_id(display_name, email)")
+    .select("*, profiles:user_id(display_name)")
     .eq("shop_id", shop.id)
-    .gte("reservation_date", weekAgo.toISOString().slice(0, 10))
-    .lte("reservation_date", weekLater.toISOString().slice(0, 10))
-    .order("reservation_date")
-    .order("reservation_time");
+    .eq("reservation_date", today)
+    .order("created_at", { ascending: false });
 
   return (
     <ReservationsClient
       shopId={shop.id}
-      initialReservations={reservations ?? []}
+      initialVisits={visits ?? []}
     />
   );
 }

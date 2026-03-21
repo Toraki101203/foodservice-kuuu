@@ -1,42 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import { Heart } from "lucide-react";
+import { Users } from "lucide-react";
 import { ShopGridCard } from "@/components/discover/shop-grid-card";
 import { EmptyState } from "@/components/feed/empty-state";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
-import type { Favorite, Shop, SeatStatus } from "@/types/database";
+import type { Follow, Shop, SeatStatus } from "@/types/database";
 
-type FavoriteWithShop = Favorite & { shop: Shop & { seat_status: SeatStatus[] } };
+type FollowWithShop = Follow & { shop: Shop & { seat_status: SeatStatus[] } };
 
-export function FavoritesClient({ favorites: initial }: { favorites: FavoriteWithShop[] }) {
-  const [favorites, setFavorites] = useState(initial);
-  const [deleteTarget, setDeleteTarget] = useState<FavoriteWithShop | null>(null);
+export function FavoritesClient({ follows: initial }: { follows: FollowWithShop[] }) {
+  const [follows, setFollows] = useState(initial);
+  const [deleteTarget, setDeleteTarget] = useState<FollowWithShop | null>(null);
 
-  const handleDelete = async () => {
+  const handleUnfollow = async () => {
     if (!deleteTarget) return;
-    const prev = favorites;
-    setFavorites((f) => f.filter((item) => item.id !== deleteTarget.id));
+    const prev = follows;
+    setFollows((f) => f.filter((item) => item.id !== deleteTarget.id));
     setDeleteTarget(null);
 
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("favorites")
-      .delete()
-      .eq("id", deleteTarget.id);
-    if (error) setFavorites(prev);
+    const res = await fetch("/api/follows", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shopId: deleteTarget.shop.id }),
+    });
+    if (!res.ok) setFollows(prev);
   };
 
-  if (favorites.length === 0) {
+  if (follows.length === 0) {
     return (
       <div className="px-4">
-        <h1 className="py-4 text-xl font-bold text-gray-900">お気に入り</h1>
+        <h1 className="py-4 text-xl font-bold text-gray-900">フォロー中</h1>
         <EmptyState
-          icon={<Heart className="size-12" />}
-          title="まだお気に入りのお店がありません"
-          description="お店を探してお気に入りに追加すると、ここに表示されます"
+          icon={<Users className="size-12" />}
+          title="まだフォローしているお店がありません"
+          description="お店をフォローすると、ここに表示されます"
           actionLabel="お店を探す"
           actionHref="/search"
         />
@@ -46,17 +45,17 @@ export function FavoritesClient({ favorites: initial }: { favorites: FavoriteWit
 
   return (
     <div className="px-4 pb-20">
-      <h1 className="py-4 text-xl font-bold text-gray-900">お気に入り</h1>
+      <h1 className="py-4 text-xl font-bold text-gray-900">フォロー中</h1>
       <div className="grid grid-cols-2 gap-3">
-        {favorites.map((fav) => (
+        {follows.map((f) => (
           <div
-            key={fav.id}
+            key={f.id}
             onContextMenu={(e) => {
               e.preventDefault();
-              setDeleteTarget(fav);
+              setDeleteTarget(f);
             }}
           >
-            <ShopGridCard shop={fav.shop} />
+            <ShopGridCard shop={f.shop} />
           </div>
         ))}
       </div>
@@ -64,15 +63,15 @@ export function FavoritesClient({ favorites: initial }: { favorites: FavoriteWit
       <Dialog
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title="お気に入りから削除"
-        description={`${deleteTarget?.shop.name}をお気に入りから削除しますか？`}
+        title="フォロー解除"
+        description={`${deleteTarget?.shop.name}のフォローを解除しますか？`}
       >
         <div className="flex gap-2 pt-2">
           <Button variant="outline" className="flex-1" onClick={() => setDeleteTarget(null)}>
             キャンセル
           </Button>
-          <Button variant="danger" className="flex-1" onClick={handleDelete}>
-            削除する
+          <Button variant="danger" className="flex-1" onClick={handleUnfollow}>
+            解除する
           </Button>
         </div>
       </Dialog>

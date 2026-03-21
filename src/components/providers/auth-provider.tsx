@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store";
 
-const PROTECTED_ROUTES = ["/favorites", "/mypage", "/reservations", "/shop-dashboard"];
+const PROTECTED_ROUTES = ["/favorites", "/mypage", "/notifications", "/reservations", "/shop-dashboard"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser);
@@ -13,29 +12,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  useEffect(() => {
-    const supabase = createClient();
-
-    // onAuthStateChange は初期セッション復元時にも INITIAL_SESSION イベントを発火するため
-    // 別途 loadUser を呼ぶ必要はない（重複プロフィールフェッチを防止）
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", session.user.id)
-            .single();
-          setUser(profile ?? null);
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    return () => subscription.unsubscribe();
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      setUser(data.user ?? null);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, [setUser, setLoading]);
+
+  // 初回マウント時 + ページ遷移時にサーバーからユーザー情報を取得
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser, pathname]);
 
   const user = useAuthStore((s) => s.user);
   const isLoading = useAuthStore((s) => s.isLoading);

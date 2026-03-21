@@ -16,7 +16,8 @@ export async function POST() {
     .from("shops")
     .select("*")
     .eq("owner_id", user.id)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (existing) {
     return NextResponse.json({ shop: existing });

@@ -13,5 +13,5 @@ export default async function ReservationsPage() {
     .eq("user_id", user.id)
     .order("reservation_date", { ascending: false });
 
-  return <ReservationsClient reservations={reservations ?? []} />;
+  return <ReservationsClient reservations={reservations ?? []} userId={user.id} />;
 }

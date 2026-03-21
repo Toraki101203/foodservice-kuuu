@@ -12,12 +12,15 @@ export default async function InstagramPage() {
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("id, name, instagram_username, instagram_access_token, instagram_synced_at, instagram_url")
+    .select("id, name, instagram_username, instagram_user_id, instagram_access_token, instagram_synced_at, instagram_url")
     .eq("owner_id", user.id)
-    .single();
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   if (!shop) redirect("/");
 
+  // access_token があれば連携済み（以前の動作を復元）
   const isConnected = Boolean(shop.instagram_access_token);
 
   const { data: posts } = await supabase

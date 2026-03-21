@@ -14,7 +14,9 @@ export default async function DashboardPage() {
     .from("shops")
     .select("*, seat_status(*)")
     .eq("owner_id", user.id)
-    .single();
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   if (!shop) redirect("/");
 
@@ -22,33 +24,39 @@ export default async function DashboardPage() {
 
   // 本日の統計データを並列取得
   const [
-    { count: reservationCount },
+    { count: visitCount },
     { count: viewCount },
-    { count: favoriteCount },
-    { data: recentReservations },
+    { count: followerCount },
+    { data: recentVisits },
     { data: recentPosts },
   ] = await Promise.all([
+    // 本日の来店（キャンセル除外）
     supabase
       .from("reservations")
       .select("*", { count: "exact", head: true })
       .eq("shop_id", shop.id)
-      .eq("reservation_date", today),
+      .eq("reservation_date", today)
+      .neq("status", "cancelled"),
+    // 本日の閲覧数
     supabase
       .from("analytics_events")
       .select("*", { count: "exact", head: true })
       .eq("shop_id", shop.id)
       .eq("event_type", "view")
       .gte("created_at", `${today}T00:00:00`),
+    // フォロワー数（follows テーブル）
     supabase
-      .from("favorites")
+      .from("follows")
       .select("*", { count: "exact", head: true })
       .eq("shop_id", shop.id),
+    // 本日の来店通知（直近3件、キャンセル除外）
     supabase
       .from("reservations")
       .select("*, profiles:user_id(display_name)")
       .eq("shop_id", shop.id)
       .eq("reservation_date", today)
-      .order("reservation_time")
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false })
       .limit(3),
     supabase
       .from("instagram_posts")
@@ -62,11 +70,11 @@ export default async function DashboardPage() {
     <DashboardOverview
       shop={shop}
       stats={{
-        reservations: reservationCount ?? 0,
+        reservations: visitCount ?? 0,
         views: viewCount ?? 0,
-        favorites: favoriteCount ?? 0,
+        favorites: followerCount ?? 0,
       }}
-      recentReservations={recentReservations ?? []}
+      recentReservations={recentVisits ?? []}
       recentPosts={recentPosts ?? []}
     />
   );

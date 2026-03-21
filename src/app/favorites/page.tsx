@@ -7,11 +7,11 @@ export default async function FavoritesPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: favorites } = await supabase
-    .from("favorites")
+  const { data: follows } = await supabase
+    .from("follows")
     .select("*, shop:shops(*, seat_status(*))")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  return <FavoritesClient favorites={favorites ?? []} />;
+  return <FavoritesClient follows={follows ?? []} />;
 }

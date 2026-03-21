@@ -38,17 +38,12 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
           className
         )}
       >
-        <div className="sticky top-0 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
-          <div className="mx-auto h-1 w-10 rounded-full bg-gray-300" />
+        <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl bg-white px-4 pt-4 pb-3">
+          <h3 className="text-lg font-bold text-gray-900">{title ?? ""}</h3>
+          <button onClick={onClose} aria-label="閉じる" className="flex size-8 items-center justify-center rounded-full bg-gray-100">
+            <X className="size-4 text-gray-500" />
+          </button>
         </div>
-        {title && (
-          <div className="flex items-center justify-between px-4 pt-2 pb-3">
-            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-            <button onClick={onClose} aria-label="閉じる" className="p-1">
-              <X className="size-5 text-gray-400" />
-            </button>
-          </div>
-        )}
         <div className="px-4 pb-4">{children}</div>
       </div>
     </>

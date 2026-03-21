@@ -11,8 +11,10 @@ export async function GET() {
   }
 
   const appId = process.env.INSTAGRAM_APP_ID;
-  const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL}/api/instagram/callback`;
-  const scope = "instagram_basic,instagram_manage_insights";
+  // Meta Developer Console に登録済みの redirect URI を使用（HTTPS 必須）
+  const redirectUri = process.env.INSTAGRAM_REDIRECT_URI
+    ?? `${process.env.NEXT_PUBLIC_SITE_URL}/api/instagram/callback`;
+  const scope = "instagram_business_basic,instagram_business_manage_messages";
 
   // CSRF 対策: ランダムな state パラメータを生成
   const state = randomBytes(32).toString("hex");
@@ -20,9 +22,10 @@ export async function GET() {
   const authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${state}`;
 
   const response = NextResponse.redirect(authUrl);
+  const isProduction = process.env.NODE_ENV === "production";
   response.cookies.set("instagram_oauth_state", state, {
     httpOnly: true,
-    secure: true,
+    secure: isProduction,
     sameSite: "lax",
     maxAge: 600,
     path: "/",

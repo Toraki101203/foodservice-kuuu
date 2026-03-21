@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import type { UserType } from "@/types/database";
 
 export default function SignupPage() {
-  const [userType, setUserType] = useState<UserType>("general");
+  const [userType, setUserType] = useState<UserType>("user");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -86,10 +86,10 @@ export default function SignupPage() {
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => setUserType("general")}
+              onClick={() => setUserType("user")}
               className={cn(
                 "rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors",
-                userType === "general"
+                userType === "user"
                   ? "border-orange-500 bg-orange-500 text-white"
                   : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               )}
@@ -98,10 +98,10 @@ export default function SignupPage() {
             </button>
             <button
               type="button"
-              onClick={() => setUserType("restaurant_owner")}
+              onClick={() => setUserType("shop_owner")}
               className={cn(
                 "rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors",
-                userType === "restaurant_owner"
+                userType === "shop_owner"
                   ? "border-orange-500 bg-orange-500 text-white"
                   : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
               )}

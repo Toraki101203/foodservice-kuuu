@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Heart, User } from "lucide-react";
+import { Home, Search, Users, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/", icon: Home, label: "ホーム" },
   { href: "/search", icon: Search, label: "検索" },
-  { href: "/favorites", icon: Heart, label: "お気に入り" },
+  { href: "/favorites", icon: Users, label: "フォロー" },
   { href: "/mypage", icon: User, label: "マイページ" },
 ] as const;
 

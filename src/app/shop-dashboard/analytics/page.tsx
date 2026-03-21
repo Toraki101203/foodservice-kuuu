@@ -17,7 +17,9 @@ export default async function AnalyticsPage() {
     .from("shops")
     .select("id, name, genre, plan_type")
     .eq("owner_id", user.id)
-    .single();
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   if (!shop) redirect("/");
 
@@ -64,8 +66,9 @@ export default async function AnalyticsPage() {
   const [
     { data: events },
     { count: totalViews },
-    { count: totalFavorites },
-    { count: totalReservations },
+    { count: totalFollowers },
+    { count: totalVisits },
+    { data: posts },
   ] = await Promise.all([
     supabase
       .from("analytics_events")
@@ -73,21 +76,30 @@ export default async function AnalyticsPage() {
       .eq("shop_id", shop.id)
       .gte("created_at", ninetyDaysAgo.toISOString())
       .order("created_at", { ascending: true }),
+    // 累計閲覧数（全期間）
     supabase
       .from("analytics_events")
       .select("*", { count: "exact", head: true })
       .eq("shop_id", shop.id)
-      .eq("event_type", "view")
-      .gte("created_at", ninetyDaysAgo.toISOString()),
+      .eq("event_type", "view"),
+    // フォロワー数（全期間）
     supabase
-      .from("favorites")
+      .from("follows")
       .select("*", { count: "exact", head: true })
       .eq("shop_id", shop.id),
+    // 累計来店数（全期間、キャンセル除外）
     supabase
       .from("reservations")
       .select("*", { count: "exact", head: true })
       .eq("shop_id", shop.id)
-      .gte("created_at", ninetyDaysAgo.toISOString()),
+      .neq("status", "cancelled"),
+    // 投稿一覧（パフォーマンス表示用）
+    supabase
+      .from("instagram_posts")
+      .select("id, image_url, caption, posted_at")
+      .eq("shop_id", shop.id)
+      .order("posted_at", { ascending: false })
+      .limit(20),
   ]);
 
   return (
@@ -96,9 +108,10 @@ export default async function AnalyticsPage() {
       events={events ?? []}
       totalStats={{
         views: totalViews ?? 0,
-        favorites: totalFavorites ?? 0,
-        reservations: totalReservations ?? 0,
+        followers: totalFollowers ?? 0,
+        visits: totalVisits ?? 0,
       }}
+      posts={posts ?? []}
     />
   );
 }

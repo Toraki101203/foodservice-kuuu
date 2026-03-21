@@ -10,6 +10,7 @@ import {
   EyeOff,
   ExternalLink,
   AlertCircle,
+  ImageOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/utils";
@@ -26,6 +27,31 @@ type Props = {
   initialPosts: InstagramPost[];
 };
 
+/** 画像読み込み失敗時のフォールバック付き Instagram 画像 */
+function PostImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className="flex size-full flex-col items-center justify-center gap-1 text-gray-400">
+        <ImageOff className="size-5" />
+        <span className="text-[10px]">読み込めません</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="size-full object-cover"
+      referrerPolicy="no-referrer"
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export function InstagramClient({
   shopId,
   isConnected,
@@ -38,8 +64,9 @@ export function InstagramClient({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [hiddenPosts, setHiddenPosts] = useState<Set<string>>(new Set());
+  const [syncedAt, setSyncedAt] = useState(lastSyncedAt);
 
-  // 手動同期
+  // 手動同期 — 同期後にAPIから最新投稿を再取得（リロード不要）
   const handleSync = useCallback(async () => {
     setIsSyncing(true);
     setSyncResult(null);
@@ -59,9 +86,14 @@ export function InstagramClient({
 
       const data = await res.json();
       setSyncResult(`${data.synced ?? 0}件の投稿を同期しました`);
+      setSyncedAt(new Date().toISOString());
 
-      // 同期後に投稿リストを再取得（ページリロード）
-      window.location.reload();
+      // DB から最新の投稿一覧を取得（リロードせずに更新）
+      const postsRes = await fetch(`/api/instagram/posts?shopId=${shopId}`);
+      if (postsRes.ok) {
+        const postsData = await postsRes.json();
+        setPosts(postsData.posts ?? []);
+      }
     } catch {
       setSyncResult("同期中にエラーが発生しました");
     } finally {
@@ -166,9 +198,9 @@ export function InstagramClient({
           )}
 
           {/* 最終同期時刻 */}
-          {lastSyncedAt && (
+          {syncedAt && (
             <p className="text-xs text-gray-400">
-              最終同期: {formatRelativeTime(lastSyncedAt)}
+              最終同期: {formatRelativeTime(syncedAt)}
             </p>
           )}
 
@@ -214,10 +246,9 @@ export function InstagramClient({
                     )}
                   >
                     {post.image_url ? (
-                      <img
+                      <PostImage
                         src={post.image_url}
                         alt={post.caption ?? ""}
-                        className="size-full object-cover"
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center text-xs text-gray-400">

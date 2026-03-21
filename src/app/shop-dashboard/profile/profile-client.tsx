@@ -8,8 +8,8 @@ import {
   FileText,
   Clock,
   Banknote,
+  Eye,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -72,11 +72,24 @@ export function ProfileClient({ shop }: Props) {
   const [description, setDescription] = useState(shop.description ?? "");
   const [address, setAddress] = useState(shop.address ?? "");
   const [phone, setPhone] = useState(shop.phone ?? "");
-  const [budgetLunch, setBudgetLunch] = useState("");
-  const [budgetDinner, setBudgetDinner] = useState("");
-  const [businessHours, setBusinessHours] = useState<BusinessHours>(
-    shop.business_hours ?? DEFAULT_BUSINESS_HOURS
-  );
+  const [budgetLunchMin, setBudgetLunchMin] = useState(shop.budget_lunch_min?.toString() ?? "");
+  const [budgetLunchMax, setBudgetLunchMax] = useState(shop.budget_lunch_max?.toString() ?? "");
+  const [budgetDinnerMin, setBudgetDinnerMin] = useState(shop.budget_dinner_min?.toString() ?? "");
+  const [budgetDinnerMax, setBudgetDinnerMax] = useState(shop.budget_dinner_max?.toString() ?? "");
+  const [businessHours, setBusinessHours] = useState<BusinessHours>(() => {
+    const raw = shop.business_hours;
+    if (!raw) return DEFAULT_BUSINESS_HOURS;
+    // text カラムの場合は文字列で返るのでパース
+    const parsed = typeof raw === "string" ? (() => { try { return JSON.parse(raw); } catch { return null; } })() : raw;
+    if (!parsed || typeof parsed !== "object") return DEFAULT_BUSINESS_HOURS;
+    // DB のデータとデフォルトをマージ（欠損した曜日を補完）
+    return Object.fromEntries(
+      Object.entries(DEFAULT_BUSINESS_HOURS).map(([day, defaults]) => [
+        day,
+        { ...defaults, ...(parsed as Record<string, DayHours>)[day] },
+      ])
+    ) as BusinessHours;
+  });
   const [mainImage, setMainImage] = useState<string | null>(
     shop.main_image ?? null
   );
@@ -131,45 +144,43 @@ export function ProfileClient({ shop }: Props) {
     setIsSaving(true);
     setError(null);
 
-    const supabase = createClient();
     let uploadedImageUrl = mainImage;
 
     // 画像アップロード
     if (imageFile) {
-      const ext = imageFile.name.split(".").pop();
-      const filePath = `${shop.id}/main.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("shop-photos")
-        .upload(filePath, imageFile, { upsert: true });
-
-      if (uploadError) {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      formData.append("shopId", shop.id);
+      const uploadRes = await fetch("/api/shops/profile/image", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) {
         setError("画像のアップロードに失敗しました");
         setIsSaving(false);
         return;
       }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("shop-photos").getPublicUrl(filePath);
-
-      uploadedImageUrl = publicUrl;
+      uploadedImageUrl = uploadData.url;
     }
 
-    const { error: updateError } = await supabase
-      .from("shops")
-      .update({
+    const res = await fetch("/api/shops/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        shopId: shop.id,
         name: name.trim(),
         genre: genre || null,
         description: description.trim() || null,
         address: address.trim() || null,
         phone: phone.trim() || null,
-        business_hours: businessHours,
-        main_image: uploadedImageUrl,
-      })
-      .eq("id", shop.id);
+        budgetLunchMin: budgetLunchMin ? Number(budgetLunchMin) : null,
+        budgetLunchMax: budgetLunchMax ? Number(budgetLunchMax) : null,
+        budgetDinnerMin: budgetDinnerMin ? Number(budgetDinnerMin) : null,
+        budgetDinnerMax: budgetDinnerMax ? Number(budgetDinnerMax) : null,
+        businessHours,
+        mainImage: uploadedImageUrl,
+      }),
+    });
 
-    if (updateError) {
+    if (!res.ok) {
       setError("保存に失敗しました。もう一度お試しください。");
     } else {
       setMainImage(uploadedImageUrl);
@@ -185,6 +196,10 @@ export function ProfileClient({ shop }: Props) {
     description,
     address,
     phone,
+    budgetLunchMin,
+    budgetLunchMax,
+    budgetDinnerMin,
+    budgetDinnerMax,
     businessHours,
     mainImage,
     imageFile,
@@ -215,25 +230,31 @@ export function ProfileClient({ shop }: Props) {
             <Camera className="size-5" />
             メイン写真
           </h2>
-          <div className="relative aspect-video overflow-hidden rounded-lg bg-gray-100">
-            {imagePreview ?? mainImage ? (
-              <img
-                src={imagePreview ?? mainImage ?? ""}
-                alt="店舗メイン画像"
-                className="size-full object-cover"
-              />
-            ) : (
-              <div className="flex size-full flex-col items-center justify-center text-gray-400">
-                <Camera className="size-10" />
-                <p className="mt-2 text-sm">写真をアップロード</p>
-              </div>
-            )}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-3 right-3 rounded-lg bg-white/90 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-white"
-            >
-              変更する
-            </button>
+          <div className="flex items-center gap-4">
+            <div className="relative size-24 shrink-0 overflow-hidden rounded-full bg-gray-100">
+              {imagePreview ?? mainImage ? (
+                <img
+                  src={imagePreview ?? mainImage ?? ""}
+                  alt="店舗メイン画像"
+                  className="size-full object-cover"
+                />
+              ) : (
+                <div className="flex size-full flex-col items-center justify-center text-gray-400">
+                  <Camera className="size-8" />
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Camera className="size-4" />
+                写真を変更
+              </Button>
+              <p className="text-xs text-gray-400">正方形の画像を推奨</p>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -241,6 +262,39 @@ export function ProfileClient({ shop }: Props) {
               onChange={handleImageSelect}
               className="hidden"
             />
+          </div>
+
+          {/* ユーザー表示プレビュー */}
+          <div className="space-y-2">
+            <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+              <Eye className="size-3.5" />
+              ユーザーからの見え方
+            </p>
+            <div className="mx-auto max-w-48">
+              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                <div className="relative aspect-[4/3] bg-gray-100">
+                  {imagePreview ?? mainImage ? (
+                    <img
+                      src={imagePreview ?? mainImage ?? ""}
+                      alt="プレビュー"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center text-gray-300">
+                      <Camera className="size-6" />
+                    </div>
+                  )}
+                </div>
+                <div className="p-2">
+                  <p className="truncate text-sm font-bold text-gray-900">
+                    {name || "店舗名"}
+                  </p>
+                  <p className="truncate text-xs text-gray-500">
+                    {genre || "ジャンル未設定"}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -327,19 +381,77 @@ export function ProfileClient({ shop }: Props) {
             <Banknote className="size-5" />
             予算目安
           </h2>
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="ランチ"
-              value={budgetLunch}
-              onChange={(e) => setBudgetLunch(e.target.value)}
-              placeholder="例: 1,000〜1,500円"
-            />
-            <Input
-              label="ディナー"
-              value={budgetDinner}
-              onChange={(e) => setBudgetDinner(e.target.value)}
-              placeholder="例: 3,000〜5,000円"
-            />
+
+          {/* ランチ */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">ランチ</label>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={budgetLunchMin}
+                  onChange={(e) => setBudgetLunchMin(e.target.value)}
+                  placeholder="800"
+                  min={0}
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 pr-8 text-sm tabular-nums text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                  円
+                </span>
+              </div>
+              <span className="shrink-0 text-sm text-gray-400">〜</span>
+              <div className="relative flex-1">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={budgetLunchMax}
+                  onChange={(e) => setBudgetLunchMax(e.target.value)}
+                  placeholder="1,500"
+                  min={0}
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 pr-8 text-sm tabular-nums text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                  円
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ディナー */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-gray-700">ディナー</label>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={budgetDinnerMin}
+                  onChange={(e) => setBudgetDinnerMin(e.target.value)}
+                  placeholder="3,000"
+                  min={0}
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 pr-8 text-sm tabular-nums text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                  円
+                </span>
+              </div>
+              <span className="shrink-0 text-sm text-gray-400">〜</span>
+              <div className="relative flex-1">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={budgetDinnerMax}
+                  onChange={(e) => setBudgetDinnerMax(e.target.value)}
+                  placeholder="5,000"
+                  min={0}
+                  className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 pr-8 text-sm tabular-nums text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                  円
+                </span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

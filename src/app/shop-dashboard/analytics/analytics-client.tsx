@@ -3,25 +3,34 @@
 import { useState, useMemo, useCallback } from "react";
 import {
   Eye,
-  Heart,
-  CalendarCheck,
+  Users,
+  Navigation,
   Sparkles,
   TrendingUp,
   Loader2,
+  Image,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { AnalyticsEvent, AnalyticsEventType } from "@/types/database";
 
+type PostInfo = {
+  id: string;
+  image_url: string | null;
+  caption: string | null;
+  posted_at: string | null;
+};
+
 type Props = {
   shopId: string;
   events: AnalyticsEvent[];
   totalStats: {
     views: number;
-    favorites: number;
-    reservations: number;
+    followers: number;
+    visits: number;
   };
+  posts: PostInfo[];
 };
 
 type Period = "7d" | "30d" | "90d";
@@ -40,11 +49,88 @@ const PERIOD_DAYS: Record<Period, number> = {
 
 const STAT_CARDS = [
   { key: "views" as const, label: "閲覧数", icon: Eye, color: "text-blue-500", bgColor: "bg-blue-50" },
-  { key: "favorites" as const, label: "お気に入り", icon: Heart, color: "text-pink-500", bgColor: "bg-pink-50" },
-  { key: "reservations" as const, label: "予約数", icon: CalendarCheck, color: "text-orange-500", bgColor: "bg-orange-50" },
+  { key: "followers" as const, label: "フォロワー", icon: Users, color: "text-pink-500", bgColor: "bg-pink-50" },
+  { key: "visits" as const, label: "来店数", icon: Navigation, color: "text-orange-500", bgColor: "bg-orange-50" },
 ];
 
-export function AnalyticsClient({ shopId, events, totalStats }: Props) {
+// 投稿別パフォーマンス（期間フィルターに連動）
+function PostPerformanceSection({
+  posts,
+  filteredEvents,
+}: {
+  posts: PostInfo[];
+  filteredEvents: AnalyticsEvent[];
+}) {
+  const postStats = useMemo(() => {
+    const stats: Record<string, { views: number; impressions: number }> = {};
+    for (const ev of filteredEvents) {
+      if (ev.event_type !== "post_view" && ev.event_type !== "post_impression") continue;
+      const postId = (ev.metadata as Record<string, unknown> | null)?.post_id as string | undefined;
+      if (!postId) continue;
+      stats[postId] = stats[postId] ?? { views: 0, impressions: 0 };
+      if (ev.event_type === "post_view") stats[postId].views++;
+      else stats[postId].impressions++;
+    }
+    return stats;
+  }, [filteredEvents]);
+
+  return (
+    <Card>
+      <CardContent className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Image className="size-5 text-gray-600" />
+          <h2 className="font-bold text-gray-900">投稿別パフォーマンス</h2>
+        </div>
+        <div className="space-y-3">
+          {posts.map((post) => {
+            const views = postStats[post.id]?.views ?? 0;
+            const impressions = postStats[post.id]?.impressions ?? 0;
+            return (
+              <div key={post.id} className="flex items-center gap-3">
+                <div className="size-12 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                  {post.image_url ? (
+                    <img
+                      src={post.image_url}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-full items-center justify-center text-[8px] text-gray-400">
+                      No Image
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-gray-700">
+                    {post.caption
+                      ? post.caption.length > 30
+                        ? `${post.caption.slice(0, 30)}...`
+                        : post.caption
+                      : "キャプションなし"}
+                  </p>
+                  <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Eye className="size-3 text-cyan-500" />
+                      <span className="tabular-nums">{views}</span>
+                      <span>閲覧</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Eye className="size-3 text-teal-500" />
+                      <span className="tabular-nums">{impressions}</span>
+                      <span>表示</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function AnalyticsClient({ shopId, events, totalStats, posts }: Props) {
   const [period, setPeriod] = useState<Period>("30d");
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false);
@@ -60,11 +146,11 @@ export function AnalyticsClient({ shopId, events, totalStats }: Props) {
 
   // 期間内の統計
   const periodStats = useMemo(() => {
-    const stats = { views: 0, favorites: 0, reservations: 0 };
+    const stats = { views: 0, followers: 0, visits: 0 };
     for (const event of filteredEvents) {
       if (event.event_type === "view") stats.views++;
-      else if (event.event_type === "favorite") stats.favorites++;
-      else if (event.event_type === "reserve") stats.reservations++;
+      else if (event.event_type === "favorite") stats.followers++;
+      else if (event.event_type === "reserve") stats.visits++;
     }
     return stats;
   }, [filteredEvents]);
@@ -72,7 +158,7 @@ export function AnalyticsClient({ shopId, events, totalStats }: Props) {
   // 日別データ（棒グラフ用）
   const dailyData = useMemo(() => {
     const days = PERIOD_DAYS[period];
-    const result: { date: string; label: string; views: number; favorites: number; reservations: number }[] = [];
+    const result: { date: string; label: string; views: number; followers: number; visits: number }[] = [];
 
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date();
@@ -88,8 +174,8 @@ export function AnalyticsClient({ shopId, events, totalStats }: Props) {
         date: dateStr,
         label: dayLabel,
         views: dayEvents.filter((e) => e.event_type === "view").length,
-        favorites: dayEvents.filter((e) => e.event_type === "favorite").length,
-        reservations: dayEvents.filter((e) => e.event_type === "reserve").length,
+        followers: dayEvents.filter((e) => e.event_type === "favorite").length,
+        visits: dayEvents.filter((e) => e.event_type === "reserve").length,
       });
     }
     return result;
@@ -229,9 +315,10 @@ export function AnalyticsClient({ shopId, events, totalStats }: Props) {
           <h2 className="font-bold text-gray-900">イベント内訳</h2>
           <div className="space-y-3">
             {([
-              { type: "view" as const, label: "閲覧", color: "bg-blue-400" },
-              { type: "favorite" as const, label: "お気に入り", color: "bg-pink-400" },
-              { type: "reserve" as const, label: "予約", color: "bg-orange-400" },
+              { type: "view" as const, label: "店舗閲覧", color: "bg-blue-400" },
+              { type: "post_view" as const, label: "投稿閲覧", color: "bg-cyan-400" },
+              { type: "post_impression" as const, label: "投稿表示", color: "bg-teal-400" },
+              { type: "reserve" as const, label: "来店", color: "bg-orange-400" },
               { type: "share" as const, label: "シェア", color: "bg-green-400" },
               { type: "instagram_click" as const, label: "Instagram", color: "bg-purple-400" },
             ] as { type: AnalyticsEventType; label: string; color: string }[]).map(
@@ -263,6 +350,14 @@ export function AnalyticsClient({ shopId, events, totalStats }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* 投稿別パフォーマンス（期間に連動） */}
+      {posts.length > 0 && (
+        <PostPerformanceSection
+          posts={posts}
+          filteredEvents={filteredEvents}
+        />
+      )}
 
       {/* AI提案セクション */}
       <Card>

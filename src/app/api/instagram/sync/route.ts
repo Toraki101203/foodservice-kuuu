@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { syncShopPosts } from "@/lib/instagram-sync";
 import { NextResponse } from "next/server";
 
 export async function POST() {
+  // 認証チェック（anon キー）
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,7 +18,8 @@ export async function POST() {
     .from("shops")
     .select("*")
     .eq("owner_id", user.id)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (!shop) {
     return NextResponse.json(
@@ -25,6 +28,20 @@ export async function POST() {
     );
   }
 
-  const result = await syncShopPosts(supabase, shop);
+  // DB 書き込みは service role で実行（RLS バイパス）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const result = await syncShopPosts(serviceSupabase, shop);
+
+  if (!result.success) {
+    return NextResponse.json(
+      { error: result.error, debug: result.debug },
+      { status: 400 }
+    );
+  }
+
   return NextResponse.json(result);
 }

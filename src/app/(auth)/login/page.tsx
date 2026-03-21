@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,24 +16,27 @@ export default function LoginPage() {
     setError(null);
     setIsLoading(true);
 
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (authError) {
-      setError(
-        authError.message === "Invalid login credentials"
-          ? "メールアドレスまたはパスワードが正しくありません"
-          : "ログインに失敗しました。もう一度お試しください。"
-      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "ログインに失敗しました。");
+        return;
+      }
+
+      // フルページリロードでサーバー側セッションを反映
+      window.location.href = "/";
+    } catch {
+      setError("通信エラーが発生しました。もう一度お試しください。");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    router.push("/");
-    router.refresh();
   };
 
   return (

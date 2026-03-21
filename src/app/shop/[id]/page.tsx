@@ -24,25 +24,15 @@ export default async function ShopPage({
   if (!shop) notFound();
 
   let isFollowing = false;
-  let isFavorited = false;
 
   if (auth.user) {
-    const [{ data: follow }, { data: fav }] = await Promise.all([
-      supabase
-        .from("follows")
-        .select("id")
-        .eq("user_id", auth.user.id)
-        .eq("shop_id", id)
-        .maybeSingle(),
-      supabase
-        .from("favorites")
-        .select("id")
-        .eq("user_id", auth.user.id)
-        .eq("shop_id", id)
-        .maybeSingle(),
-    ]);
+    const { data: follow } = await supabase
+      .from("follows")
+      .select("id")
+      .eq("user_id", auth.user.id)
+      .eq("shop_id", id)
+      .maybeSingle();
     isFollowing = !!follow;
-    isFavorited = !!fav;
   }
 
   return (
@@ -50,7 +40,6 @@ export default async function ShopPage({
       shop={shop}
       posts={posts ?? []}
       isFollowing={isFollowing}
-      isFavorited={isFavorited}
       isLoggedIn={!!auth.user}
     />
   );

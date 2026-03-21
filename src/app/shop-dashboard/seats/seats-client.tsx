@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   Armchair,
   Users,
@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import type { SeatStatus, SeatStatusType, PlanType } from "@/types/database";
 
@@ -72,32 +71,7 @@ export function SeatsClient({ shopId, planType, initialStatus }: Props) {
   );
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-
-  // Supabase リアルタイム購読
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`seat_status:${shopId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "seat_status",
-          filter: `shop_id=eq.${shopId}`,
-        },
-        (payload) => {
-          const newRecord = payload.new as SeatStatus;
-          setStatus(newRecord.status);
-          setUpdatedAt(newRecord.updated_at);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [shopId]);
+  const [error, setError] = useState<string | null>(null);
 
   const handleStatusChange = useCallback(
     async (newStatus: SeatStatusType) => {
@@ -111,20 +85,28 @@ export function SeatsClient({ shopId, planType, initialStatus }: Props) {
       setStatus(newStatus);
       setUpdatedAt(now);
       setIsUpdating(true);
+      setError(null);
 
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("seat_status")
-        .update({ status: newStatus, updated_at: now })
-        .eq("shop_id", shopId);
+      try {
+        const res = await fetch("/api/shops/seat-status", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ shopId, status: newStatus }),
+        });
 
-      if (error) {
-        // ロールバック
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error ?? "更新に失敗しました");
+          setStatus(previous);
+          setUpdatedAt(previousUpdatedAt);
+        } else {
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 2000);
+        }
+      } catch {
+        setError("通信エラーが発生しました");
         setStatus(previous);
         setUpdatedAt(previousUpdatedAt);
-      } else {
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2000);
       }
 
       setIsUpdating(false);
@@ -143,6 +125,13 @@ export function SeatsClient({ shopId, planType, initialStatus }: Props) {
           お店の空席状況をリアルタイムで更新できます
         </p>
       </div>
+
+      {/* エラー表示 */}
+      {error && (
+        <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
       {/* 無料プラン注意 */}
       {!isPaidPlan && (

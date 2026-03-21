@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-const ALLOWED_USER_TYPES = ["general", "restaurant_owner", "partner"] as const;
+const ALLOWED_USER_TYPES = ["user", "shop_owner", "admin"] as const;
 
 export async function POST(request: Request) {
   const { email, password, userType } = await request.json();
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
   const validUserType = ALLOWED_USER_TYPES.includes(userType)
     ? userType
-    : "general";
+    : "user";
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     password,
     options: {
       data: {
-        user_type: validUserType,
+        role: validUserType,
       },
     },
   });

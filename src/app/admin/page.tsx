@@ -11,11 +11,11 @@ export default async function AdminPage() {
   // 管理者チェック（本番ではロールベースの権限管理を実装）
   const { data: profile } = await supabase
     .from("profiles")
-    .select("user_type")
+    .select("role")
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.user_type !== "admin") redirect("/");
+  if (!profile || profile.role !== "admin") redirect("/");
 
   const [{ data: shops }, { data: profiles }, { data: subscriptions }] =
     await Promise.all([
@@ -25,7 +25,7 @@ export default async function AdminPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("profiles")
-        .select("id, email, user_type, created_at")
+        .select("id, display_name, role, created_at")
         .order("created_at", { ascending: false })
         .limit(50),
       supabase
@@ -117,7 +117,7 @@ export default async function AdminPage() {
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="px-4 py-2 text-left font-medium text-gray-500">
-                    メールアドレス
+                    表示名
                   </th>
                   <th className="px-4 py-2 text-left font-medium text-gray-500">
                     タイプ
@@ -130,8 +130,8 @@ export default async function AdminPage() {
               <tbody>
                 {profiles?.map((p) => (
                   <tr key={p.id} className="border-b border-gray-100">
-                    <td className="px-4 py-2 text-gray-900">{p.email}</td>
-                    <td className="px-4 py-2 text-gray-600">{p.user_type}</td>
+                    <td className="px-4 py-2 text-gray-900">{p.display_name ?? "未設定"}</td>
+                    <td className="px-4 py-2 text-gray-600">{p.role}</td>
                     <td className="px-4 py-2 text-gray-600 tabular-nums">
                       {new Date(p.created_at).toLocaleDateString("ja-JP")}
                     </td>

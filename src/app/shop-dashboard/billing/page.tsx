@@ -15,7 +15,9 @@ export default async function BillingPage() {
     .from("shops")
     .select("id, name, plan_type")
     .eq("owner_id", user.id)
-    .single();
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   if (!shop) redirect("/");
 
@@ -23,7 +25,7 @@ export default async function BillingPage() {
     .from("subscriptions")
     .select("*")
     .eq("shop_id", shop.id)
-    .single();
+    .maybeSingle();
 
   return (
     <Suspense fallback={<div className="p-4 text-center text-sm text-gray-400">読み込み中...</div>}>

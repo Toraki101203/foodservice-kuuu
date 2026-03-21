@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Armchair,
-  ClipboardList,
+  Navigation,
   Instagram,
   Store,
   BarChart3,
@@ -21,7 +21,7 @@ import type { Shop } from "@/types/database";
 const NAV_ITEMS = [
   { href: "/shop-dashboard", icon: LayoutDashboard, label: "概要", exact: true },
   { href: "/shop-dashboard/seats", icon: Armchair, label: "空席ステータス" },
-  { href: "/shop-dashboard/reservations", icon: ClipboardList, label: "予約台帳" },
+  { href: "/shop-dashboard/reservations", icon: Navigation, label: "来店通知" },
   { href: "/shop-dashboard/instagram", icon: Instagram, label: "Instagram連携" },
   { href: "/shop-dashboard/profile", icon: Store, label: "店舗プロフィール" },
   { href: "/shop-dashboard/analytics", icon: BarChart3, label: "集客分析" },

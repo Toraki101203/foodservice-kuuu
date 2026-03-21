@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  CalendarCheck,
+  Navigation,
   Eye,
   Heart,
   ChevronRight,
@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { formatTime } from "@/lib/format";
-import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SeatBadge } from "@/components/ui/seat-badge";
@@ -45,9 +44,9 @@ type Props = {
 };
 
 const STAT_CARDS = [
-  { key: "reservations" as const, label: "本日の予約", icon: CalendarCheck, color: "text-orange-500" },
+  { key: "reservations" as const, label: "本日の来店", icon: Navigation, color: "text-orange-500" },
   { key: "views" as const, label: "本日の閲覧数", icon: Eye, color: "text-blue-500" },
-  { key: "favorites" as const, label: "お気に入り数", icon: Heart, color: "text-pink-500" },
+  { key: "favorites" as const, label: "フォロワー数", icon: Heart, color: "text-pink-500" },
 ];
 
 const STATUS_OPTIONS: { value: SeatStatusType; label: string }[] = [
@@ -76,13 +75,14 @@ export function DashboardOverview({
     setCurrentStatus(newStatus);
     setIsUpdating(true);
 
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("seat_status")
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
-      .eq("shop_id", shop.id);
-
-    if (error) {
+    try {
+      const res = await fetch("/api/shops/seat-status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shopId: shop.id, status: newStatus }),
+      });
+      if (!res.ok) setCurrentStatus(previous);
+    } catch {
       setCurrentStatus(previous);
     }
     setIsUpdating(false);
@@ -148,11 +148,11 @@ export function DashboardOverview({
         </CardContent>
       </Card>
 
-      {/* 本日の予約 */}
+      {/* 本日の来店通知 */}
       <Card>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-gray-900">本日の予約</h2>
+            <h2 className="font-bold text-gray-900">本日の来店通知</h2>
             <Link
               href="/shop-dashboard/reservations"
               className="flex items-center text-sm text-orange-500 hover:text-orange-600"
@@ -163,7 +163,7 @@ export function DashboardOverview({
           </div>
           {recentReservations.length === 0 ? (
             <p className="py-4 text-center text-sm text-gray-400">
-              本日の予約はありません
+              本日の来店通知はありません
             </p>
           ) : (
             <div className="divide-y divide-gray-100">
@@ -184,21 +184,21 @@ export function DashboardOverview({
                   <span
                     className={cn(
                       "rounded-full px-2 py-0.5 text-xs font-medium",
-                      reservation.status === "confirmed"
-                        ? "bg-green-50 text-green-600"
-                        : reservation.status === "pending"
-                          ? "bg-yellow-50 text-yellow-600"
-                          : reservation.status === "completed"
-                            ? "bg-gray-100 text-gray-500"
-                            : "bg-red-50 text-red-500"
+                      reservation.status === "on_the_way"
+                        ? "bg-orange-50 text-orange-600"
+                        : reservation.status === "arrived"
+                          ? "bg-green-50 text-green-600"
+                          : reservation.status === "no_show"
+                            ? "bg-red-50 text-red-500"
+                            : "bg-gray-100 text-gray-500"
                     )}
                   >
-                    {reservation.status === "confirmed"
-                      ? "確認済み"
-                      : reservation.status === "pending"
-                        ? "未確認"
-                        : reservation.status === "completed"
-                          ? "完了"
+                    {reservation.status === "on_the_way"
+                      ? "向かっています"
+                      : reservation.status === "arrived"
+                        ? "到着済み"
+                        : reservation.status === "no_show"
+                          ? "未来店"
                           : "キャンセル"}
                   </span>
                 </div>

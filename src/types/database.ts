@@ -5,17 +5,17 @@
 
 // --- ENUM 型 ---
 
-export type UserType = "general" | "restaurant_owner" | "partner";
+export type UserType = "user" | "shop_owner" | "admin";
 
 export type PlanType = "free" | "standard" | "premium";
 
 export type SeatStatusType = "available" | "busy" | "full" | "closed";
 
 export type ReservationStatus =
-  | "pending"
-  | "confirmed"
-  | "cancelled"
-  | "completed";
+  | "on_the_way"
+  | "arrived"
+  | "no_show"
+  | "cancelled";
 
 export type SubscriptionStatus =
   | "active"
@@ -27,10 +27,8 @@ export type NotificationType =
   | "follow"
   | "new_post"
   | "new_instagram_post"
-  | "reservation_confirmed"
-  | "reservation_cancelled"
-  | "new_reservation"
-  | "favorite";
+  | "instant_visit"
+  | "visit_arrived";
 
 export type AnalyticsEventType =
   | "view"
@@ -38,7 +36,9 @@ export type AnalyticsEventType =
   | "reserve"
   | "favorite"
   | "share"
-  | "instagram_click";
+  | "instagram_click"
+  | "post_view"
+  | "post_impression";
 
 export type MediaType = "IMAGE" | "VIDEO";
 
@@ -64,13 +64,10 @@ export type BusinessHours = {
 
 export type Profile = {
   id: string;
-  email: string;
   display_name: string | null;
   avatar_url: string | null;
-  bio: string | null;
-  user_type: UserType;
+  role: UserType;
   created_at: string;
-  updated_at: string;
 };
 
 export type Shop = {
@@ -84,6 +81,10 @@ export type Shop = {
   phone: string | null;
   business_hours: BusinessHours | null;
   genre: string | null;
+  budget_lunch_min: number | null;
+  budget_lunch_max: number | null;
+  budget_dinner_min: number | null;
+  budget_dinner_max: number | null;
   main_image: string | null;
   plan_type: PlanType;
   is_verified: boolean;
@@ -94,7 +95,6 @@ export type Shop = {
   instagram_user_id: string | null;
   instagram_synced_at: string | null;
   created_at: string;
-  updated_at: string;
 };
 
 export type SeatStatus = {
@@ -113,10 +113,10 @@ export type Follow = {
   created_at: string;
 };
 
-export type Favorite = {
+export type PostFavorite = {
   id: string;
   user_id: string;
-  shop_id: string;
+  post_id: string;
   created_at: string;
 };
 
@@ -223,7 +223,7 @@ export type Database = {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: Partial<Profile> & { id: string; email: string };
+        Insert: Partial<Profile> & { id: string };
         Update: Partial<Profile>;
       };
       shops: {
@@ -241,18 +241,16 @@ export type Database = {
         Insert: { user_id: string; shop_id: string };
         Update: Partial<Follow>;
       };
-      favorites: {
-        Row: Favorite;
-        Insert: { user_id: string; shop_id: string };
-        Update: Partial<Favorite>;
+      post_favorites: {
+        Row: PostFavorite;
+        Insert: { user_id: string; post_id: string };
+        Update: Partial<PostFavorite>;
       };
       reservations: {
         Row: Reservation;
         Insert: Partial<Reservation> & {
           user_id: string;
           shop_id: string;
-          reservation_date: string;
-          reservation_time: string;
           party_size: number;
         };
         Update: Partial<Reservation>;

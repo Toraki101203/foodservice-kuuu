@@ -14,7 +14,9 @@ export default async function SeatsPage() {
     .from("shops")
     .select("id, name, plan_type")
     .eq("owner_id", user.id)
-    .single();
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   if (!shop) redirect("/");
 
@@ -22,7 +24,7 @@ export default async function SeatsPage() {
     .from("seat_status")
     .select("*")
     .eq("shop_id", shop.id)
-    .single();
+    .maybeSingle();
 
   return (
     <SeatsClient

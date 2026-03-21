@@ -1,56 +1,50 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import Link from "next/link";
-import { Heart } from "lucide-react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { SeatBadge } from "@/components/ui/seat-badge";
 import { formatRelativeTime } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 import type { InstagramPost, Shop, SeatStatus } from "@/types/database";
-import { createClient } from "@/lib/supabase/client";
 
 type FeedCardProps = {
   post: InstagramPost & { shop: Shop & { seat_status: SeatStatus[] } };
-  isFavorited?: boolean;
   distance?: string;
+  onPostClick?: (genre: string | null) => void;
 };
 
-export function FeedCard({ post, isFavorited = false, distance }: FeedCardProps) {
-  const [liked, setLiked] = useState(isFavorited);
+export function FeedCard({ post, distance, onPostClick }: FeedCardProps) {
   const shop = post.shop;
   const seatStatus = shop.seat_status?.[0];
+  const articleRef = useRef<HTMLElement>(null);
+  const trackedRef = useRef(false);
 
-  const toggleFavorite = async () => {
-    const prev = liked;
-    setLiked(!liked);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setLiked(prev);
-      return;
-    }
+  // IntersectionObserver: 投稿がフィードに表示されたら post_impression を記録
+  useEffect(() => {
+    const el = articleRef.current;
+    if (!el) return;
 
-    if (prev) {
-      const { error } = await supabase
-        .from("favorites")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("shop_id", shop.id);
-      if (error) setLiked(prev);
-    } else {
-      const { error } = await supabase
-        .from("favorites")
-        .insert({ user_id: user.id, shop_id: shop.id });
-      if (error) setLiked(prev);
-    }
-  };
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !trackedRef.current) {
+          trackedRef.current = true;
+          trackEvent(shop.id, "post_impression", { post_id: post.id });
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [shop.id, post.id]);
 
   return (
-    <article className="border-b border-gray-100 pb-4">
+    <article ref={articleRef} className="border-b border-gray-100 pb-4">
       {/* ヘッダー: 店舗アイコン・名前・ジャンル・空席バッジ */}
       <div className="flex items-center justify-between px-4 py-2">
         <Link href={`/shop/${shop.id}`} className="flex items-center gap-2">
-          <div className="size-8 overflow-hidden rounded-full bg-gray-200">
+          <div className="size-10 overflow-hidden rounded-lg bg-gray-200">
             {shop.main_image && (
               <img src={shop.main_image} alt="" className="size-full object-cover" />
             )}
@@ -69,7 +63,7 @@ export function FeedCard({ post, isFavorited = false, distance }: FeedCardProps)
       </div>
 
       {/* 投稿画像 */}
-      <Link href={`/shop/${shop.id}`}>
+      <Link href={`/shop/${shop.id}/post/${post.id}`} onClick={() => onPostClick?.(shop.genre)}>
         {post.image_url && (
           <img
             src={post.image_url}
@@ -80,17 +74,8 @@ export function FeedCard({ post, isFavorited = false, distance }: FeedCardProps)
         )}
       </Link>
 
-      {/* アクション + キャプション */}
+      {/* キャプション */}
       <div className="px-4 pt-2">
-        <button
-          onClick={toggleFavorite}
-          aria-label={liked ? "お気に入りから削除" : "お気に入りに追加"}
-          className="mb-1 p-1"
-        >
-          <Heart
-            className={cn("size-6", liked ? "fill-red-500 text-red-500" : "text-gray-600")}
-          />
-        </button>
         {post.caption && (
           <p className="text-sm leading-relaxed text-gray-700 text-pretty">
             <Link href={`/shop/${shop.id}`} className="mr-1 font-bold text-gray-900">

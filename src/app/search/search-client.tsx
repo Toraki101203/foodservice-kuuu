@@ -5,7 +5,6 @@ import { Search, X } from "lucide-react";
 import { ShopGridCard } from "@/components/discover/shop-grid-card";
 import { EmptyState } from "@/components/feed/empty-state";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 import type { Shop, SeatStatus } from "@/types/database";
 
 type ShopWithSeat = Shop & { seat_status: SeatStatus[] };
@@ -49,14 +48,9 @@ export function SearchClient() {
     setIsLoading(true);
     setHasSearched(true);
 
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("shops")
-      .select("*, seat_status(*)")
-      .or(`name.ilike.%${searchQuery}%,genre.ilike.%${searchQuery}%,address.ilike.%${searchQuery}%`)
-      .limit(30);
-
-    setResults(data ?? []);
+    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+    const data = await res.json();
+    setResults(data.shops ?? []);
     setIsLoading(false);
   }, []);
 

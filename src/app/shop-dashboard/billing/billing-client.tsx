@@ -188,7 +188,7 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
             <Card
               key={planType}
               className={cn(
-                "relative transition-shadow hover:shadow-md",
+                "relative h-full transition-shadow hover:shadow-md",
                 isCurrent && "ring-2 ring-orange-500",
                 isPopular && !isCurrent && "ring-1 ring-orange-300"
               )}
@@ -200,7 +200,7 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
                 </div>
               )}
 
-              <CardContent className="flex flex-col space-y-4 p-5">
+              <CardContent className="flex h-full flex-col space-y-4 p-5">
                 {/* プランアイコン + 名前 */}
                 <div className="text-center">
                   <div
@@ -244,7 +244,7 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
                 </ul>
 
                 {/* アクションボタン */}
-                <div>
+                <div className="mt-auto">
                   {isCurrent ? (
                     <Button
                       variant="secondary"

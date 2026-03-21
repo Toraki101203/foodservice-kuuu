@@ -14,26 +14,28 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/login");
 
-  // user_type チェック: restaurant_owner のみダッシュボードアクセス可
+  // role チェック: shop_owner のみダッシュボードアクセス可
   const { data: profile } = await supabase
     .from("profiles")
-    .select("user_type")
+    .select("role")
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.user_type !== "restaurant_owner") {
+  if (!profile || profile.role !== "shop_owner") {
     redirect("/");
   }
 
-  // 店舗データの取得・作成（instagram_access_token を除外してクライアント露出を防止）
+  // 店舗データの取得（最も古い店舗を優先して取得）
   let { data: shop } = await supabase
     .from("shops")
-    .select("id, name, plan_type, main_image, genre, description, address, phone, budget, business_hours, owner_id, instagram_username, instagram_user_id, instagram_url, instagram_synced_at, instagram_token_expires_at, latitude, longitude, is_verified, created_at, updated_at")
+    .select("id, name, plan_type, main_image, genre, description, address, phone, budget_lunch_min, budget_lunch_max, budget_dinner_min, budget_dinner_max, business_hours, owner_id, instagram_username, instagram_user_id, instagram_url, instagram_synced_at, instagram_token_expires_at, latitude, longitude, is_verified, created_at")
     .eq("owner_id", user.id)
-    .single();
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   if (!shop) {
-    // 初回アクセス時に店舗を自動作成
+    // 初回アクセス時のみ店舗を自動作成（既存店舗がない場合のみ）
     const { data: newShop } = await supabase
       .from("shops")
       .insert({ owner_id: user.id, name: "新しい店舗" })

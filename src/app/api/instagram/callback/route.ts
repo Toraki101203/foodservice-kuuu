@@ -29,7 +29,9 @@ export async function GET(request: NextRequest) {
 
   const appId = process.env.INSTAGRAM_APP_ID!;
   const appSecret = process.env.INSTAGRAM_APP_SECRET!;
-  const redirectUri = `${siteUrl}/api/instagram/callback`;
+  // トークン交換時の redirect_uri は Meta に登録したものと一致させる
+  const redirectUri = process.env.INSTAGRAM_REDIRECT_URI
+    ?? `${siteUrl}/api/instagram/callback`;
 
   // 短命トークンに交換
   const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
