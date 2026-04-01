@@ -117,30 +117,51 @@ src/
 
 Web ブラウジングには /browse を使用すること。mcp__claude-in-chrome__* ツールは使用禁止。
 
-### スプリントプロセス（9フェーズ: 0〜8）
+### スキル優先度（重要）
+- **gstack スキルを最優先で使用すること。** 他のスキル（superpowers等）と機能が重複する場合、gstack を優先する。
+- **コマンド使用の宣言**: gstack コマンドを使用する際は、必ず事前に宣言すること。
+  - 例:「`/review` を使ってコードレビューを行います」「`/qa` でQAテストを開始します」
+  - ユーザーが gstack を使いこなせるよう、どのコマンドをなぜ使うのかを毎回説明する。
+
+### スプリントプロセス（9フェーズ: Phase 0〜8）
 
 **重要:** ユーザーは開発未経験者。各フェーズの完了時に次のフェーズを案内し、順番にガイドすること。
 スラッシュコマンドの入力は不要。文脈から自動的にスキルを起動する。
 
-新規事業・新機能の開発は、必ず以下の順序で進める:
+| Phase | フェーズ名 | やること | コマンド |
+|-------|-----------|---------|---------|
+| 0 | アイデア検証 | 課題の深掘り、ユーザー像、競合分析、MVP定義 | /office-hours |
+| 1 | 計画レビュー | CEO・デザイン・技術の3方向レビュー | /autoplan（一括）or 個別に /plan-ceo-review → /plan-design-review → /plan-eng-review |
+| 2 | デザイン | デザインシステム → モックアップ → HTML化 | /design-consultation → /design-shotgun → /design-html |
+| 3 | 実装 | コーディング + デバッグ + ブラウザ確認 | コーディング + /investigate + /browse |
+| 4 | コードレビュー | バグ・設計問題・セキュリティの検査 | /review + /cso |
+| 5 | QA テスト | ブラウザで動作確認 + パフォーマンス測定 | /qa + /benchmark |
+| 6 | 出荷 | テスト実行 → PR 作成 → プッシュ | /ship |
+| 7 | デプロイ | PR マージ → 本番反映 → ヘルスチェック | /land-and-deploy → /canary |
+| 8 | リリース後 | ドキュメント更新 → 振り返り → 学び記録 | /document-release → /retro → /learn |
 
-| Phase | フェーズ名 | やること | gstack スキル | トリガーキーワード |
-|-------|-----------|---------|--------------|-------------------|
-| 0 | アイデア検証 | 課題の深掘り、ユーザー像、競合分析、MVP定義 | /office-hours | 「アイデア」「相談」「何を作る」「ブレスト」「新しい事業」 |
-| 1 | 計画レビュー | CEO視点でスコープ判断 → 技術設計 → テスト計画 | /plan-ceo-review → /plan-eng-review | 「計画」「レビュー」「スコープ」「設計確認」 |
-| 2 | デザイン | UI/UXデザインシステム構築、モックアップ作成 | /design-consultation → /design-shotgun | 「デザイン」「UI」「画面設計」「モックアップ」 |
-| 3 | 実装 | コードを書く。TDD（テスト先行）で進める | （通常の開発作業） | 「実装して」「作って」「機能追加」「コード書いて」 |
-| 4 | コードレビュー | バグ・設計問題・セキュリティの検査 | /review → /cso | 「レビューして」「チェックして」「確認して」 |
-| 5 | QA テスト | 実際のブラウザで動作確認、バグ修正 | /qa | 「QA」「テスト」「動作確認」「バグ確認」 |
-| 6 | 出荷 | テスト実行 → PR 作成 → プッシュ | /ship | 「シップ」「出荷」「PR作って」「プッシュ」 |
-| 7 | デプロイ | PR マージ → 本番反映 → ヘルスチェック | /land-and-deploy → /canary | 「デプロイ」「マージ」「本番反映」「リリース」 |
-| 8 | リリース後 | 振り返り → ドキュメント更新 → 学び記録 | /retro → /document-release → /learn | 「振り返り」「まとめ」「ドキュメント更新」 |
+**クイックパス（小さな修正）:** 修正 → /review → /ship → /land-and-deploy
+
+### 自然言語マッピング（スラッシュコマンドを覚える必要なし）
+
+| ユーザーの発言 | 起動するコマンド |
+|--------------|----------------|
+| 「このアイデアどう思う？」 | /office-hours |
+| 「計画レビューして」 | /autoplan |
+| 「コードレビューお願い」 | /review |
+| 「QAテストして」 | /qa |
+| 「PRつくって」 | /ship |
+| 「デプロイして」 | /land-and-deploy |
+| 「セキュリティ大丈夫？」 | /cso |
+| 「バグの原因調べて」 | /investigate |
+| 「振り返りしよう」 | /retro |
 
 ### フェーズ進行ルール
 1. **各フェーズ完了時**: 「Phase N 完了。次は Phase N+1: ○○ です。進めますか？」と案内する
-2. **フェーズ飛ばし禁止**: Phase 0 → 1 → 2 → ... → 8 の順序を守る（ただしバグ修正等の小タスクは例外）
-3. **バグ修正・緊急対応**: /investigate を使用（フェーズ順序の例外）
-4. **途中参加**: 既存プロジェクトの改善は、該当フェーズから開始してよい
+2. **フェーズ飛ばし禁止**: Phase 0 → 1 → 2 → ... → 8 の順序を守る
+3. **小さな修正**: クイックパス（修正 → /review → /ship → /land-and-deploy）で対応
+4. **バグ修正・緊急対応**: /investigate を使用（フェーズ順序の例外）
+5. **既存プロジェクトの改善**: 該当フェーズから開始してよい
 
 ### 利用可能なスキル一覧
 /office-hours, /plan-ceo-review, /plan-eng-review, /plan-design-review,
@@ -149,3 +170,23 @@ Web ブラウジングには /browse を使用すること。mcp__claude-in-chro
 /qa-only, /design-review, /setup-browser-cookies, /setup-deploy, /retro,
 /investigate, /document-release, /codex, /cso, /autoplan, /careful,
 /freeze, /guard, /unfreeze, /gstack-upgrade, /learn, /checkpoint, /health
+
+## Skill routing
+
+When the user's request matches an available skill, ALWAYS invoke it using the Skill
+tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
+The skill has specialized workflows that produce better results than ad-hoc answers.
+
+Key routing rules:
+- Product ideas, "is this worth building", brainstorming → invoke office-hours
+- Bugs, errors, "why is this broken", 500 errors → invoke investigate
+- Ship, deploy, push, create PR → invoke ship
+- QA, test the site, find bugs → invoke qa
+- Code review, check my diff → invoke review
+- Update docs after shipping → invoke document-release
+- Weekly retro → invoke retro
+- Design system, brand → invoke design-consultation
+- Visual audit, design polish → invoke design-review
+- Architecture review → invoke plan-eng-review
+- Save progress, checkpoint, resume → invoke checkpoint
+- Code quality, health check → invoke health
