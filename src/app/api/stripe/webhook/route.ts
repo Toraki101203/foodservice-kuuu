@@ -6,12 +6,14 @@ import type Stripe from "stripe";
 // 必須環境変数の検証（起動時）
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const STRIPE_STANDARD_PRICE_ID = process.env.STRIPE_STANDARD_PRICE_ID;
-const STRIPE_PREMIUM_PRICE_ID = process.env.STRIPE_PREMIUM_PRICE_ID;
+const STRIPE_STANDARD_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_STANDARD_PRICE_ID;
+const STRIPE_PREMIUM_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID;
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("Stripe webhook: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY が未設定です");
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
+  throw new Error("Stripe webhook: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / STRIPE_WEBHOOK_SECRET が未設定です");
 }
+
+const STRIPE_WEBHOOK_SECRET: string = process.env.STRIPE_WEBHOOK_SECRET;
 
 // Stripe v20+ の型定義に current_period_end が含まれない場合のヘルパー
 function getPeriodEnd(sub: Stripe.Subscription): string {
@@ -26,14 +28,18 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function POST(request: Request) {
   const body = await request.text();
-  const signature = request.headers.get("stripe-signature")!;
+  const signature = request.headers.get("stripe-signature");
+
+  if (!signature) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  }
 
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      STRIPE_WEBHOOK_SECRET
     );
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -84,17 +90,30 @@ export async function POST(request: Request) {
         .single();
 
       if (existing) {
-        const status =
-          sub.status === "active"
-            ? "active"
-            : sub.status === "past_due"
-              ? "past_due"
-              : "canceled";
+        // Stripe の status を DB に安全にマッピング（trialing/incomplete を canceled にしない）
+        const statusMap: Record<string, string> = {
+          active: "active",
+          past_due: "past_due",
+          canceled: "canceled",
+          unpaid: "past_due",
+        };
+        const status = statusMap[sub.status] ?? "active";
+
+        // プラン変更を検出して plan_type も更新
+        const priceId = sub.items.data[0]?.price.id;
+        const planType =
+          priceId === STRIPE_PREMIUM_PRICE_ID
+            ? "premium"
+            : priceId === STRIPE_STANDARD_PRICE_ID
+              ? "standard"
+              : null;
+
         await supabaseAdmin
           .from("subscriptions")
           .update({
             status,
             current_period_end: getPeriodEnd(sub),
+            ...(planType && { plan_type: planType }),
           })
           .eq("stripe_subscription_id", sub.id);
 
@@ -102,6 +121,11 @@ export async function POST(request: Request) {
           await supabaseAdmin
             .from("shops")
             .update({ plan_type: "free" })
+            .eq("id", existing.shop_id);
+        } else if (planType) {
+          await supabaseAdmin
+            .from("shops")
+            .update({ plan_type: planType })
             .eq("id", existing.shop_id);
         }
       }

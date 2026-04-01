@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { BillingClient } from "./billing-client";
 
@@ -11,7 +12,13 @@ export default async function BillingPage() {
 
   if (!user) redirect("/login");
 
-  const { data: shop } = await supabase
+  // service role で取得（RLS バイパス）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("id, name, plan_type")
     .eq("owner_id", user.id)
@@ -21,7 +28,7 @@ export default async function BillingPage() {
 
   if (!shop) redirect("/");
 
-  const { data: subscription } = await supabase
+  const { data: subscription } = await serviceSupabase
     .from("subscriptions")
     .select("*")
     .eq("shop_id", shop.id)

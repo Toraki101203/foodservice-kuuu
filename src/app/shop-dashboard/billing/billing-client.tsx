@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { PLANS } from "@/lib/stripe/plans";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import type { PlanType, Subscription } from "@/types/database";
 
 type Props = {
@@ -52,14 +53,19 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
   const searchParams = useSearchParams();
   const success = searchParams.get("success");
   const canceled = searchParams.get("canceled");
+  const cancelScheduled = searchParams.get("cancel_scheduled");
 
   const [isLoading, setIsLoading] = useState<PlanType | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
 
-  // プラン変更（Stripe Checkout へ遷移）
+  // プラン変更（既存サブスクリプションなら即座に変更、なければ Stripe Checkout）
   const handleChangePlan = useCallback(
     async (planType: PlanType) => {
-      if (planType === currentPlan || planType === "free") return;
+      if (planType === currentPlan) return;
+      // 無料へのダウングレードは解約で対応
+      if (planType === "free") return;
 
       const plan = PLANS[planType];
       if (!plan.priceId) return;
@@ -122,6 +128,37 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
     }
   }, [shopId, currentPlan]);
 
+  // サブスクリプション解約（期間終了時に無料プランへ）
+  const handleCancelSubscription = useCallback(async () => {
+    setShowCancelDialog(true);
+  }, []);
+
+  const confirmCancel = useCallback(async () => {
+    setIsCanceling(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/stripe/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shopId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "解約に失敗しました");
+        return;
+      }
+
+      setShowCancelDialog(false);
+      window.location.href = "/shop-dashboard/billing?cancel_scheduled=true";
+    } catch {
+      setError("エラーが発生しました。もう一度お試しください。");
+    } finally {
+      setIsCanceling(false);
+    }
+  }, [shopId]);
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       {/* ページタイトル */}
@@ -137,6 +174,12 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
         <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-600">
           <Check className="size-4 shrink-0" />
           プランの変更が完了しました。ご利用ありがとうございます。
+        </div>
+      )}
+      {cancelScheduled && (
+        <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-600">
+          <Check className="size-4 shrink-0" />
+          解約を受け付けました。現在の請求期間終了まで引き続きご利用いただけます。
         </div>
       )}
       {canceled && (
@@ -254,13 +297,24 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
                       現在のプラン
                     </Button>
                   ) : planType === "free" ? (
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      disabled
-                    >
-                      無料プラン
-                    </Button>
+                    currentPlan !== "free" ? (
+                      <Button
+                        variant="outline"
+                        className="w-full text-red-500"
+                        onClick={handleCancelSubscription}
+                        isLoading={isCanceling}
+                      >
+                        無料プランに戻す
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        disabled
+                      >
+                        無料プラン
+                      </Button>
+                    )
                   ) : (
                     <Button
                       variant={isPopular ? "primary" : "outline"}
@@ -268,9 +322,9 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
                       onClick={() => handleChangePlan(planType)}
                       isLoading={isLoading === planType}
                     >
-                      {isPopular
-                        ? "このプランにする"
-                        : "アップグレード"}
+                      {PLAN_ORDER.indexOf(planType) > PLAN_ORDER.indexOf(currentPlan)
+                        ? "アップグレード"
+                        : "プラン変更"}
                     </Button>
                   )}
                 </div>
@@ -287,7 +341,7 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
             <div>
               <p className="font-medium text-gray-900">請求・支払い管理</p>
               <p className="text-sm text-gray-500">
-                支払い方法の変更やプランの解約ができます
+                支払い方法の変更ができます
               </p>
             </div>
             <Button
@@ -301,6 +355,32 @@ export function BillingClient({ shopId, currentPlan, subscription }: Props) {
           </CardContent>
         </Card>
       )}
+
+      {/* 解約確認ダイアログ */}
+      <Dialog
+        open={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        title="プランを解約しますか？"
+        description="現在の請求期間が終了するまで有料機能をご利用いただけます。期間終了後に無料プランに切り替わります。"
+      >
+        <div className="flex gap-3 pt-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setShowCancelDialog(false)}
+          >
+            キャンセル
+          </Button>
+          <Button
+            variant="primary"
+            className="flex-1 bg-red-500 hover:bg-red-600"
+            onClick={confirmCancel}
+            isLoading={isCanceling}
+          >
+            解約する
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }
