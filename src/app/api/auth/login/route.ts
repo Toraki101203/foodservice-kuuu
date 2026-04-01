@@ -1,10 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json();
+  // レート制限: 5回/分（ブルートフォース防止）
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const { allowed } = checkRateLimit(`login:${ip}`, { maxRequests: 5, windowMs: 60_000 });
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらく経ってからお試しください。" },
+      { status: 429 }
+    );
+  }
 
-  if (!email || !password) {
+  let body: { email?: unknown; password?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+  const { email, password } = body;
+
+  if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
     return NextResponse.json(
       { error: "メールアドレスとパスワードは必須です" },
       { status: 400 }

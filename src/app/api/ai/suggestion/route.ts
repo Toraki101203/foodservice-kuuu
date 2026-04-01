@@ -1,10 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
-  const { shopId } = await request.json();
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -13,6 +12,23 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "未認証" }, { status: 401 });
   }
+
+  // レート制限: 10回/時（API料金保護）
+  const { allowed } = checkRateLimit(`ai:${user.id}`, { maxRequests: 10, windowMs: 3_600_000 });
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "AI提案のリクエスト上限に達しました。1時間後に再度お試しください。" },
+      { status: 429 }
+    );
+  }
+
+  let body: { shopId?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+  const { shopId } = body;
 
   // 所有権 + プレミアムプランチェック
   const { data: shop } = await supabase

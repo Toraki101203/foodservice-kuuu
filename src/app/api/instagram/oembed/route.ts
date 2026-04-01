@@ -1,6 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
+  // レート制限: 30回/分/IP
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const { allowed } = checkRateLimit(`oembed:${ip}`, { maxRequests: 30, windowMs: 60_000 });
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "リクエストが多すぎます" },
+      { status: 429 }
+    );
+  }
+
   const url = request.nextUrl.searchParams.get("url");
   if (!url) {
     return NextResponse.json({ error: "URL is required" }, { status: 400 });
