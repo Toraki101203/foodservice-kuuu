@@ -14,7 +14,13 @@ export async function GET(request: Request) {
     );
   }
 
-  const searchTerm = `%${query.trim()}%`;
+  // PostgREST の特殊文字をエスケープ（カンマ、括弧、ピリオド）
+  const sanitized = query.trim().replace(/[,().\\%_]/g, "");
+  if (sanitized.length === 0) {
+    return NextResponse.json({ shops: [] });
+  }
+
+  const searchTerm = `%${sanitized}%`;
 
   const { data, error } = await supabase
     .from("shops")

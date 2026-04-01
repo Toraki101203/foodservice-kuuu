@@ -3,7 +3,17 @@ import { stripe } from "@/lib/stripe/server";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const { shopId } = await request.json();
+  let body: { shopId?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+
+  const { shopId } = body;
+  if (typeof shopId !== "string") {
+    return NextResponse.json({ error: "パラメータが不正です" }, { status: 400 });
+  }
 
   const supabase = await createClient();
   const {

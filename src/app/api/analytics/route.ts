@@ -21,18 +21,48 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { shopId, eventType, metadata } = await request.json();
+  let body: { shopId?: unknown; eventType?: unknown; metadata?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
 
-  if (!shopId || !eventType) {
+  const { shopId, eventType, metadata } = body;
+
+  if (typeof shopId !== "string" || typeof eventType !== "string") {
     return NextResponse.json(
       { error: "パラメータが不足しています" },
       { status: 400 }
     );
   }
 
-  if (!VALID_EVENT_TYPES.includes(eventType)) {
+  if (!VALID_EVENT_TYPES.includes(eventType as AnalyticsEventType)) {
     return NextResponse.json(
       { error: "無効なイベントタイプです" },
+      { status: 400 }
+    );
+  }
+
+  // shopId が実在するか確認（偽データ注入防止）
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("id")
+    .eq("id", shopId)
+    .maybeSingle();
+
+  if (!shop) {
+    return NextResponse.json(
+      { error: "無効な店舗IDです" },
+      { status: 400 }
+    );
+  }
+
+  // metadata のサイズ制限（1KB）
+  const metadataStr = metadata ? JSON.stringify(metadata) : null;
+  if (metadataStr && metadataStr.length > 1024) {
+    return NextResponse.json(
+      { error: "メタデータが大きすぎます" },
       { status: 400 }
     );
   }

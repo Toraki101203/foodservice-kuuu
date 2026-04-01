@@ -3,6 +3,8 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
 
 export async function POST(request: Request) {
   // 認証チェック（anon key）
@@ -34,6 +36,22 @@ export async function POST(request: Request) {
     );
   }
 
+  // MIMEタイプ + 拡張子のホワイトリスト検証
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    return NextResponse.json(
+      { error: "画像形式はJPEG、PNG、WebPのみ対応しています" },
+      { status: 400 }
+    );
+  }
+
+  const fileExt = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (!ALLOWED_EXTENSIONS.includes(fileExt)) {
+    return NextResponse.json(
+      { error: "対応していないファイル拡張子です" },
+      { status: 400 }
+    );
+  }
+
   // 店舗のオーナーであることを確認
   const { data: shop } = await supabase
     .from("shops")
@@ -52,8 +70,8 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 拡張子を取得
-  const ext = file.name.split(".").pop() || "jpg";
+  // 検証済み拡張子を使用
+  const ext = fileExt;
   const filePath = `${shopId}/main.${ext}`;
 
   // ファイルを ArrayBuffer に変換
