@@ -12,7 +12,7 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "Kuuu — 好きなお店の\"今\"が見える",
+  title: "モグリス — 好きなお店の\"今\"が見える",
   description: "近くの飲食店のリアルタイム情報をInstagramから。空席確認・予約もできる飲食店SNS。",
 };
 

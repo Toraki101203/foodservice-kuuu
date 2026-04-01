@@ -8,7 +8,7 @@ import type { InstagramPost, Shop, SeatStatus, InstagramStory } from "@/types/da
 
 // ---- 閲覧済み投稿トラッキング（localStorage） ----
 
-const VIEWED_STORAGE_KEY = "kuuu_viewed_posts";
+const VIEWED_STORAGE_KEY = "moguris_viewed_posts";
 const VIEWED_MAX_COUNT = 200;
 const VIEWED_EXPIRY_DAYS = 7;
 
@@ -50,7 +50,7 @@ function markPostsAsViewed(postIds: string[]): void {
 
 // ---- ジャンル嗜好トラッキング（localStorage） ----
 
-const GENRE_PREF_KEY = "kuuu_genre_prefs";
+const GENRE_PREF_KEY = "moguris_genre_prefs";
 const GENRE_MAX_ENTRIES = 50;
 
 type GenrePrefEntry = { genre: string; count: number; lastAt: number };

@@ -71,7 +71,7 @@ export function MypageClient({ profile }: { profile: Profile }) {
       {/* アプリ情報 */}
       <div className="mt-6 space-y-2 pb-8 text-center text-xs text-gray-400">
         <p>利用規約 · プライバシーポリシー</p>
-        <p>Kuuu v1.0.0</p>
+        <p>Moguris v1.0.0</p>
       </div>
 
       <Dialog

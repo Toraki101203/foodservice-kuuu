@@ -130,7 +130,7 @@ function trendingBoost(post: PostForScoring): number {
 
 /**
  * 登録から14日以内の新店舗を優遇表示
- * Kuuu に新しく参加した店舗の発見を促進する
+ * モグリス に新しく参加した店舗の発見を促進する
  */
 const NEW_SHOP_DAYS = 14;
 

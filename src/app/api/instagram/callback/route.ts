@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!;
 
-  // 認証チェックを最初に行う（トークン交換前）
+  // 認証チェック（anon キーでユーザー確認）
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -71,7 +72,13 @@ export async function GET(request: NextRequest) {
     expiresAt.getSeconds() + (longTokenData.expires_in || 5184000)
   );
 
-  await supabase
+  // service role で書き込み（RLS バイパス — access_token 等の機密カラムを確実に保存）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { error: updateError } = await serviceSupabase
     .from("shops")
     .update({
       instagram_access_token: longTokenData.access_token,
@@ -80,6 +87,13 @@ export async function GET(request: NextRequest) {
       instagram_username: userData.username,
     })
     .eq("owner_id", user.id);
+
+  if (updateError) {
+    console.error("[Instagram Callback] shops update failed:", updateError.message);
+    return NextResponse.redirect(
+      `${siteUrl}/shop-dashboard/instagram?error=db_update`
+    );
+  }
 
   // state cookie を削除
   const response = NextResponse.redirect(

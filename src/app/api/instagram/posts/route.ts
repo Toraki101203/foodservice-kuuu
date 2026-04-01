@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
+  // 認証チェック（anon キー）
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -13,8 +15,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "shopId が必要です" }, { status: 400 });
   }
 
+  // service role で取得（RLS バイパス）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // オーナー確認
-  const { data: shop } = await supabase
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("id")
     .eq("id", shopId)
@@ -26,7 +34,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "店舗が見つかりません" }, { status: 404 });
   }
 
-  const { data: posts } = await supabase
+  const { data: posts } = await serviceSupabase
     .from("instagram_posts")
     .select("*")
     .eq("shop_id", shopId)

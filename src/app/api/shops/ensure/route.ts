@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -11,11 +12,17 @@ export async function POST() {
     return NextResponse.json({ error: "未認証" }, { status: 401 });
   }
 
-  // Check if shop already exists
-  const { data: existing } = await supabase
+  // service role で確認（RLS による取得漏れを防止）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: existing } = await serviceSupabase
     .from("shops")
     .select("*")
     .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
@@ -24,13 +31,13 @@ export async function POST() {
   }
 
   // Create new shop
-  const { data: profile } = await supabase
+  const { data: profile } = await serviceSupabase
     .from("profiles")
     .select("display_name")
     .eq("id", user.id)
     .single();
 
-  const { data: shop, error } = await supabase
+  const { data: shop, error } = await serviceSupabase
     .from("shops")
     .insert({
       owner_id: user.id,
@@ -48,8 +55,7 @@ export async function POST() {
     );
   }
 
-  // Create initial seat_status
-  await supabase.from("seat_status").insert({
+  await serviceSupabase.from("seat_status").insert({
     shop_id: shop.id,
     status: "closed",
   });

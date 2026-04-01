@@ -1,7 +1,7 @@
 # プロジェクト指示書
 
 ## プロジェクト概要
-飲食店向け Instagram 連携集客サービス「Kuuu」— 飲食店の「今この瞬間」を近くにいる人に届けるSNSプラットフォーム。
+飲食店向け Instagram 連携集客サービス「モグリス（Moguris）」— 飲食店の「今この瞬間」を近くにいる人に届けるSNSプラットフォーム。
 
 ### ユーザータイプ
 - **一般ユーザー**: 飲食店検索・お気に入り・フォロー・予約
@@ -112,3 +112,35 @@ src/
 - `INSTAGRAM_APP_ID` / `INSTAGRAM_APP_SECRET`
 - `NEXT_PUBLIC_SITE_URL`
 - `ANTHROPIC_API_KEY`（AI提案用、プレミアム機能）
+
+## gstack（開発スプリントツール）
+
+Web ブラウジングには /browse を使用すること。mcp__claude-in-chrome__* ツールは使用禁止。
+
+### スプリントプロセス（自動適用）
+以下のキーワードを検知したら、対応する gstack スキルを**自動的に起動**すること。
+ユーザーがスラッシュコマンドを入力しなくても、文脈から適切なスキルを判断して実行する。
+
+| フェーズ | トリガーキーワード | スキル |
+|----------|-------------------|--------|
+| 1. 構想 | 「アイデア」「何を作る」「相談」「ブレスト」 | /office-hours |
+| 2. CEO レビュー | 「CEOレビュー」「プロダクト判断」 | /plan-ceo-review |
+| 3. 設計レビュー | 「デザインレビュー」「UI評価」 | /plan-design-review |
+| 4. 技術レビュー | 「技術レビュー」「アーキテクチャ確認」 | /plan-eng-review |
+| 5. 自動レビュー | 「全レビュー」「autoplan」 | /autoplan |
+| 6. コードレビュー | 「レビューして」「PRレビュー」 | /review |
+| 7. QA テスト | 「QAして」「テストして」「バグ確認」 | /qa |
+| 8. セキュリティ | 「セキュリティチェック」「脆弱性」 | /cso |
+| 9. シップ | 「シップ」「PRを作って」「プッシュ」 | /ship |
+| 10. デプロイ | 「マージ」「デプロイ」「本番反映」 | /land-and-deploy |
+| 11. 振り返り | 「振り返り」「今週のまとめ」 | /retro |
+| デバッグ | 「バグ」「なぜ動かない」「調査して」 | /investigate |
+| ドキュメント | 「ドキュメント更新」「READMEを直して」 | /document-release |
+
+### 利用可能なスキル一覧
+/office-hours, /plan-ceo-review, /plan-eng-review, /plan-design-review,
+/design-consultation, /design-shotgun, /design-html, /review, /ship,
+/land-and-deploy, /canary, /benchmark, /browse, /connect-chrome, /qa,
+/qa-only, /design-review, /setup-browser-cookies, /setup-deploy, /retro,
+/investigate, /document-release, /codex, /cso, /autoplan, /careful,
+/freeze, /guard, /unfreeze, /gstack-upgrade, /learn, /checkpoint, /health

@@ -43,7 +43,7 @@ export default function LoginPage() {
     <div className="space-y-6">
       {/* ロゴ */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-orange-500">Kuuu</h1>
+        <h1 className="text-3xl font-bold text-orange-500">モグリス</h1>
         <p className="mt-1 text-sm text-gray-500">アカウントにログイン</p>
       </div>
 

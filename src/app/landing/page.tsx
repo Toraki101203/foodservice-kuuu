@@ -64,7 +64,7 @@ export default function LandingPage() {
     <div className="min-h-dvh bg-white">
       {/* ヘッダー */}
       <header className="flex items-center justify-between px-4 py-3 md:px-8">
-        <span className="text-2xl font-bold text-orange-500">Kuuu</span>
+        <span className="text-2xl font-bold text-orange-500">モグリス</span>
         <Link href="/login">
           <Button variant="ghost" size="sm">
             ログイン
@@ -93,7 +93,7 @@ export default function LandingPage() {
       {/* 機能セクション */}
       <section className="bg-gray-50 px-4 py-16 md:py-20">
         <h2 className="text-center text-2xl font-bold text-gray-900 text-balance md:text-3xl">
-          Kuuuでできること
+          モグリスでできること
         </h2>
         <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-3">
           {FEATURES.map((feature) => (
@@ -176,7 +176,7 @@ export default function LandingPage() {
       {/* フッター */}
       <footer className="border-t border-gray-200 bg-gray-50 px-4 py-8">
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 md:flex-row md:justify-between">
-          <span className="text-lg font-bold text-orange-500">Kuuu</span>
+          <span className="text-lg font-bold text-orange-500">モグリス</span>
           <nav className="flex gap-6 text-sm text-gray-500">
             <Link href="/login" className="hover:text-gray-700">
               ログイン
@@ -189,7 +189,7 @@ export default function LandingPage() {
             </Link>
           </nav>
           <p className="text-xs text-gray-400">
-            &copy; {new Date().getFullYear()} Kuuu. All rights reserved.
+            &copy; {new Date().getFullYear()} Moguris. All rights reserved.
           </p>
         </div>
       </footer>

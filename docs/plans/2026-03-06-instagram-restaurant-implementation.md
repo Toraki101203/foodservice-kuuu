@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** 既存の飲食店SNS「Kuuu」を、Instagram連携 × 位置情報 × リアルタイム空席 の集客サービスにリファクタリングする
+**Goal:** 既存の飲食店SNS「モグリス」を、Instagram連携 × 位置情報 × リアルタイム空席 の集客サービスにリファクタリングする
 
 **Architecture:** 段階的リファクタリング方式。SNS機能を削除 → 地図+リスト中心UIに再構築 → Instagram手動連携 → パートナーポータル → AI機能。既存のSupabase基盤（認証・テーブル・RLS）とStripe決済はそのまま活用する。
 
@@ -1069,7 +1069,7 @@ git commit -m "feat: Stripe 3プラン対応・ユーザー予約履歴ページ
 
 **Step 2: Header のサービス名を更新**
 
-仮名（決まるまで「Kuuu」のままか、シンプルなプレースホルダー）。
+仮名（決まるまで「モグリス」のままか、シンプルなプレースホルダー）。
 
 **Step 3: ビルド確認**
 

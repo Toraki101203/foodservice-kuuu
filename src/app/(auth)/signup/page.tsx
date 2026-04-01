@@ -47,7 +47,7 @@ export default function SignupPage() {
   if (success) {
     return (
       <div className="space-y-6 text-center">
-        <h1 className="text-3xl font-bold text-orange-500">Kuuu</h1>
+        <h1 className="text-3xl font-bold text-orange-500">モグリス</h1>
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-6">
           <p className="font-medium text-green-800">確認メールを送信しました</p>
           <p className="mt-2 text-sm text-green-600">
@@ -68,7 +68,7 @@ export default function SignupPage() {
     <div className="space-y-6">
       {/* ロゴ */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-orange-500">Kuuu</h1>
+        <h1 className="text-3xl font-bold text-orange-500">モグリス</h1>
         <p className="mt-1 text-sm text-gray-500">新規アカウント作成</p>
       </div>
 

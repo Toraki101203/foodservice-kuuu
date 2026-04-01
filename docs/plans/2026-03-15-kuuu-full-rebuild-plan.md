@@ -1,8 +1,8 @@
-# Kuuu 完全リビルド実装計画
+# モグリス 完全リビルド実装計画
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Kuuu（飲食店SNS）をDB含め0から再構築する。プロジェクト初期化 → 基盤構築 → 全ページ実装まで一気通貫で完成させる。
+**Goal:** モグリス（飲食店SNS）をDB含め0から再構築する。プロジェクト初期化 → 基盤構築 → 全ページ実装まで一気通貫で完成させる。
 
 **Architecture:** Next.js 16 App Router。Server Component でデータ取得 → Client Component に props で渡す。デザインシステムコンポーネントを先に作り、全ページで再利用。Zustand で軽量状態管理。全テーブル `shops` に統一。
 
@@ -730,7 +730,7 @@ git commit -m "feat: Stripe・Instagram同期・静的データ追加"
 
 **layout.tsx:**
 - Noto Sans JP フォント設定（Google Fonts、weight: 400/500/700）
-- metadata: title "Kuuu", description, theme-color #f97316
+- metadata: title "モグリス", description, theme-color #f97316
 - viewport: width=device-width, initial-scale=1, viewport-fit=cover
 - AuthProvider → AppShell → children → ToastProvider
 
@@ -766,7 +766,7 @@ git commit -m "feat: Stripe・Instagram同期・静的データ追加"
 
 **header.tsx:**
 - 固定ヘッダー（z-20）
-- 左: 「Kuuu」ロゴ（text-xl font-bold text-orange-500）
+- 左: 「モグリス」ロゴ（text-xl font-bold text-orange-500）
 - 右: 通知アイコン（Bell）+ アバター → マイページリンク
 - 通知バッジ（赤丸 + 件数）
 
@@ -809,7 +809,7 @@ git commit -m "feat: レイアウト・UIコンポーネント・プロバイダ
 - Create: `src/app/(auth)/signup/page.tsx`
 
 **login/page.tsx:**
-- Kuuu ロゴ
+- モグリス ロゴ
 - メールアドレス + パスワード入力
 - [ログイン] ボタン → `supabase.auth.signInWithPassword()`
 - 成功 → `/` にリダイレクト

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { InstagramClient } from "./instagram-client";
 
@@ -10,7 +11,13 @@ export default async function InstagramPage() {
 
   if (!user) redirect("/login");
 
-  const { data: shop } = await supabase
+  // service role で取得（RLS が access_token カラムをブロックする場合に対応）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("id, name, instagram_username, instagram_user_id, instagram_access_token, instagram_synced_at, instagram_url")
     .eq("owner_id", user.id)
@@ -20,10 +27,9 @@ export default async function InstagramPage() {
 
   if (!shop) redirect("/");
 
-  // access_token があれば連携済み（以前の動作を復元）
   const isConnected = Boolean(shop.instagram_access_token);
 
-  const { data: posts } = await supabase
+  const { data: posts } = await serviceSupabase
     .from("instagram_posts")
     .select("*")
     .eq("shop_id", shop.id)

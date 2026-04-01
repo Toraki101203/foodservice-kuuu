@@ -1,8 +1,8 @@
-# Kuuu リデザイン実装計画
+# モグリス リデザイン実装計画
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Kuuu のフロントエンドを SNS ファースト設計で再構築する。バックエンド（API Routes, DB, Stripe, Instagram 連携）は維持。
+**Goal:** モグリス のフロントエンドを SNS ファースト設計で再構築する。バックエンド（API Routes, DB, Stripe, Instagram 連携）は維持。
 
 **Architecture:** Server Component でデータ取得 → Client Component に props で渡す。デザインシステムコンポーネントを先に作り、全ページで再利用。フォロー機能と Instagram ストーリー連携を新規追加。
 
@@ -645,7 +645,7 @@ export function Header() {
     return (
         <header className="fixed top-0 left-0 right-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4">
             <Link href="/" className="text-xl font-bold text-orange-500">
-                Kuuu
+                モグリス
             </Link>
             <div className="flex items-center gap-3">
                 <Link href="/notifications" className="relative" aria-label="通知">
@@ -827,7 +827,7 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-    title: "Kuuu — 好きなお店の\"今\"が見える",
+    title: "モグリス — 好きなお店の\"今\"が見える",
     description: "近くの飲食店のリアルタイム情報をInstagramから。空席確認・予約もできる。",
 };
 
@@ -916,7 +916,7 @@ export default function LoginPage() {
     return (
         <div className="w-full max-w-sm space-y-6">
             <div className="text-center">
-                <h1 className="text-2xl font-bold text-orange-500">Kuuu</h1>
+                <h1 className="text-2xl font-bold text-orange-500">モグリス</h1>
                 <p className="mt-2 text-sm text-gray-500">アカウントにログイン</p>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -1011,7 +1011,7 @@ export default function SignupPage() {
     return (
         <div className="w-full max-w-sm space-y-6">
             <div className="text-center">
-                <h1 className="text-2xl font-bold text-orange-500">Kuuu</h1>
+                <h1 className="text-2xl font-bold text-orange-500">モグリス</h1>
                 <p className="mt-2 text-sm text-gray-500">新しいアカウントを作成</p>
             </div>
             <div className="flex gap-2">

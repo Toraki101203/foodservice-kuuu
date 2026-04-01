@@ -18,6 +18,7 @@ export async function POST() {
     .from("shops")
     .select("*")
     .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
