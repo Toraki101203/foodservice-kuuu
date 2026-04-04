@@ -252,7 +252,7 @@ export function InstagramClient({
                       />
                     ) : (
                       <div className="flex size-full items-center justify-center text-xs text-gray-400">
-                        No Image
+                        画像なし
                       </div>
                     )}
                   </div>

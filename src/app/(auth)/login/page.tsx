@@ -98,12 +98,10 @@ export default function LoginPage() {
         <p>
           <button
             type="button"
-            className="text-gray-500 hover:text-gray-700"
-            onClick={() => {
-              // パスワードリセット機能（将来実装）
-            }}
+            className="text-gray-400 cursor-not-allowed"
+            disabled
           >
-            パスワードを忘れた方
+            パスワードを忘れた方（準備中）
           </button>
         </p>
       </div>

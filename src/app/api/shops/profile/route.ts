@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 export async function PATCH(request: Request) {
@@ -11,8 +12,14 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { shopId, name, genre, description, address, phone, budgetLunchMin, budgetLunchMax, budgetDinnerMin, budgetDinnerMax, businessHours, mainImage } =
-    await request.json();
+  let body: { shopId?: unknown; name?: unknown; genre?: unknown; description?: unknown; address?: unknown; phone?: unknown; budgetLunchMin?: unknown; budgetLunchMax?: unknown; budgetDinnerMin?: unknown; budgetDinnerMax?: unknown; businessHours?: unknown; mainImage?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+
+  const { shopId, name, genre, description, address, phone, budgetLunchMin, budgetLunchMax, budgetDinnerMin, budgetDinnerMax, businessHours, mainImage } = body;
 
   if (!shopId) {
     return NextResponse.json(
@@ -21,8 +28,14 @@ export async function PATCH(request: Request) {
     );
   }
 
+  // Service role クライアント（RLS バイパス：shops 読み取り・更新用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // 店舗のオーナーであることを確認
-  const { data: shop } = await supabase
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("id")
     .eq("id", shopId)
@@ -47,7 +60,7 @@ export async function PATCH(request: Request) {
   if (businessHours !== undefined) updateData.business_hours = typeof businessHours === "string" ? businessHours : JSON.stringify(businessHours);
   if (mainImage !== undefined) updateData.main_image = mainImage;
 
-  const { data, error } = await supabase
+  const { data, error } = await serviceSupabase
     .from("shops")
     .update(updateData)
     .eq("id", shopId)

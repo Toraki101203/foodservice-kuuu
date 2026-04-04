@@ -24,6 +24,7 @@ export function BottomNav() {
             <Link
               key={href}
               href={href}
+              aria-label={label}
               className={cn(
                 "flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5",
                 isActive ? "text-orange-500" : "text-gray-400"

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ImageOff } from "lucide-react";
 import type { InstagramPost } from "@/types/database";
 
 export function InstagramGrid({
@@ -24,13 +25,18 @@ export function InstagramGrid({
           href={`/shop/${shopId}/post/${post.id}`}
           className="relative aspect-square overflow-hidden bg-gray-100"
         >
-          {post.image_url && (
+          {post.image_url ? (
             <img
               src={post.image_url}
               alt=""
               className="size-full object-cover"
               loading="lazy"
             />
+          ) : (
+            <div className="flex size-full flex-col items-center justify-center gap-1 text-gray-400">
+              <ImageOff className="size-5" />
+              <span className="text-[10px]">画像なし</span>
+            </div>
           )}
         </Link>
       ))}

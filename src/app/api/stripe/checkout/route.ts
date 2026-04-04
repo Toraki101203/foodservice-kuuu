@@ -115,14 +115,21 @@ export async function POST(request: Request) {
   }
 
   // 新規サブスクリプション: Stripe Checkout へ遷移
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    line_items: [{ price: plan.priceId, quantity: 1 }],
-    mode: "subscription",
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/shop-dashboard/billing?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/shop-dashboard/billing?canceled=true`,
-    metadata: { shop_id: shopId },
-  });
+  try {
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      line_items: [{ price: plan.priceId, quantity: 1 }],
+      mode: "subscription",
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/shop-dashboard/billing?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/shop-dashboard/billing?canceled=true`,
+      metadata: { shop_id: shopId },
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch {
+    return NextResponse.json(
+      { error: "決済セッションの作成に失敗しました。しばらく経ってからお試しください。" },
+      { status: 500 }
+    );
+  }
 }

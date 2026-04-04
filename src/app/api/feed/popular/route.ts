@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { scorePopular, getPostDistance, diversifyPosts, type GenrePreferences } from "@/lib/feed-scoring";
 import { formatDistance } from "@/lib/geo";
@@ -28,11 +28,16 @@ export async function GET(request: NextRequest) {
   );
   const genrePreferences = parseGenrePrefs(searchParams.get("genrePrefs") ?? "");
 
-  const supabase = await createClient();
+  // Service role クライアント（RLS バイパス：shops/instagram_posts/seat_status 読み取り用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
   // 投稿 + 店舗データ取得（30日以内）
-  const { data: posts, error } = await supabase
+  const { data: posts, error } = await serviceSupabase
     .from("instagram_posts")
     .select("*, shop:shops(*, seat_status(*))")
     .gte("posted_at", thirtyDaysAgo)
@@ -53,18 +58,18 @@ export async function GET(request: NextRequest) {
 
   const [allFollowsResult, recentLikesResult, recentFollowsResult] = await Promise.all([
     // フォロワー数（1クエリで全店舗分を取得 → JS側で集計）
-    supabase
+    serviceSupabase
       .from("follows")
       .select("shop_id")
       .in("shop_id", shopIds),
     // 直近6時間のいいね数（投稿別）
-    supabase
+    serviceSupabase
       .from("post_favorites")
       .select("post_id")
       .in("post_id", postIds)
       .gte("created_at", sixHoursAgo),
     // 直近6時間のフォロー数（店舗別）
-    supabase
+    serviceSupabase
       .from("follows")
       .select("shop_id")
       .in("shop_id", shopIds)

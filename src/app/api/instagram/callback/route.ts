@@ -59,12 +59,24 @@ export async function GET(request: NextRequest) {
   const longTokenRes = await fetch(
     `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${appSecret}&access_token=${tokenData.access_token}`
   );
+  if (!longTokenRes.ok) {
+    return NextResponse.redirect(
+      `${siteUrl}/shop-dashboard/instagram?error=token_exchange`
+    );
+  }
+
   const longTokenData = await longTokenRes.json();
 
   // Instagram ユーザー情報取得
   const userRes = await fetch(
     `https://graph.instagram.com/v21.0/me?fields=id,username&access_token=${longTokenData.access_token}`
   );
+  if (!userRes.ok) {
+    return NextResponse.redirect(
+      `${siteUrl}/shop-dashboard/instagram?error=user_info`
+    );
+  }
+
   const userData = await userRes.json();
 
   const expiresAt = new Date();

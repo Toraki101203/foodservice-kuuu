@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type { AnalyticsEventType } from "@/types/database";
 
@@ -44,8 +45,14 @@ export async function POST(request: Request) {
     );
   }
 
+  // Service role クライアント（RLS バイパス：shops 存在確認 + analytics_events 書き込み用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // shopId が実在するか確認（偽データ注入防止）
-  const { data: shop } = await supabase
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("id")
     .eq("id", shopId)
@@ -67,7 +74,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error } = await supabase.from("analytics_events").insert({
+  const { error } = await serviceSupabase.from("analytics_events").insert({
     shop_id: shopId,
     event_type: eventType,
     user_id: user?.id || null,

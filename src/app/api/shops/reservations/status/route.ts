@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createNotification } from "@/lib/notifications";
 import { NextResponse } from "next/server";
 
@@ -13,9 +14,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { visitId, status } = await request.json();
+  let body: { visitId?: unknown; status?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
 
-  if (!visitId || !status) {
+  const { visitId, status } = body;
+
+  if (!visitId || !status || typeof status !== "string") {
     return NextResponse.json(
       { error: "パラメータが不足しています" },
       { status: 400 }
@@ -30,8 +38,14 @@ export async function PATCH(request: Request) {
     );
   }
 
+  // Service role クライアント（RLS バイパス：shops 読み取り用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // 来店通知を取得（ユーザーIDも取得）
-  const { data: visit } = await supabase
+  const { data: visit } = await serviceSupabase
     .from("reservations")
     .select("id, shop_id, user_id")
     .eq("id", visitId)
@@ -45,7 +59,7 @@ export async function PATCH(request: Request) {
   }
 
   // この店舗のオーナーであることを確認
-  const { data: shop } = await supabase
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("id, name")
     .eq("id", visit.shop_id)
@@ -56,7 +70,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
 
-  const { error } = await supabase
+  const { error } = await serviceSupabase
     .from("reservations")
     .update({
       status,

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createNotification } from "@/lib/notifications";
 import { NextResponse } from "next/server";
 
@@ -13,7 +14,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { shopId, partySize, note } = await request.json();
+  let body: { shopId?: unknown; partySize?: unknown; note?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+
+  const { shopId, partySize, note } = body;
 
   if (!shopId || !partySize) {
     return NextResponse.json(
@@ -68,8 +76,14 @@ export async function POST(request: Request) {
     );
   }
 
+  // Service role クライアント（RLS バイパス：shops 読み取り用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // 店舗オーナーに来店通知を送信
-  const { data: shop } = await supabase
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("owner_id, name")
     .eq("id", shopId)
@@ -99,7 +113,14 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { visitId } = await request.json();
+  let body: { visitId?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+
+  const { visitId } = body;
 
   if (!visitId) {
     return NextResponse.json(

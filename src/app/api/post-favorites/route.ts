@@ -11,7 +11,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { postId } = await request.json();
+  let body: { postId?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+
+  const { postId } = body;
 
   if (!postId) {
     return NextResponse.json(
@@ -58,7 +65,14 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { postId } = await request.json();
+  let body: { postId?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+
+  const { postId } = body;
 
   if (!postId) {
     return NextResponse.json(

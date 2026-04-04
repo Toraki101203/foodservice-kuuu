@@ -78,6 +78,9 @@ export function ShopDetailClient({
   const [showVisitSheet, setShowVisitSheet] = useState(false);
   const [showVisitSuccess, setShowVisitSuccess] = useState(false);
 
+  // 予約エラー
+  const [reserveError, setReserveError] = useState<string | null>(null);
+
   // 「今すぐ行く」が使えるか（standard以上 + 空席ありor混雑）
   const canVisit =
     (shop.plan_type === "standard" || shop.plan_type === "premium") &&
@@ -167,13 +170,12 @@ export function ShopDetailClient({
       trackEvent(shop.id, "reserve");
       setShowVisitSheet(false);
       setShowVisitSuccess(true);
+      setReserveError(null);
       setPartySize(2);
       setNote("");
     } else {
       const data = await res.json().catch(() => null);
-      if (data?.error) {
-        alert(data.error);
-      }
+      setReserveError(data?.error ?? "予約に失敗しました。もう一度お試しください。");
     }
   };
 
@@ -394,6 +396,13 @@ export function ShopDetailClient({
               className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
             />
           </div>
+
+          {/* エラーメッセージ */}
+          {reserveError && (
+            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+              {reserveError}
+            </div>
+          )}
 
           {/* 送信 */}
           <div className="pt-1">

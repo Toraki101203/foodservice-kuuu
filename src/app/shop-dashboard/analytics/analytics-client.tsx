@@ -96,7 +96,7 @@ function PostPerformanceSection({
                     />
                   ) : (
                     <div className="flex size-full items-center justify-center text-[8px] text-gray-400">
-                      No Image
+                      画像なし
                     </div>
                   )}
                 </div>

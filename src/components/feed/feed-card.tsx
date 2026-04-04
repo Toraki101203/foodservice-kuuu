@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import Link from "next/link";
+import { ImageOff } from "lucide-react";
 import { SeatBadge } from "@/components/ui/seat-badge";
 import { formatRelativeTime } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
@@ -64,13 +65,20 @@ export function FeedCard({ post, distance, onPostClick }: FeedCardProps) {
 
       {/* 投稿画像 */}
       <Link href={`/shop/${shop.id}/post/${post.id}`} onClick={() => onPostClick?.(shop.genre)}>
-        {post.image_url && (
+        {post.image_url ? (
           <img
             src={post.image_url}
             alt={post.caption ?? ""}
             className="w-full object-cover"
             loading="lazy"
           />
+        ) : (
+          <div className="flex aspect-square w-full items-center justify-center bg-gray-100">
+            <div className="flex flex-col items-center gap-1 text-gray-400">
+              <ImageOff className="size-8" />
+              <span className="text-xs">画像なし</span>
+            </div>
+          </div>
         )}
       </Link>
 

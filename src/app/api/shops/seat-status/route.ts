@@ -11,9 +11,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { shopId, status } = await request.json();
+  let body: { shopId?: unknown; status?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
 
-  if (!shopId || !status) {
+  const { shopId, status } = body;
+
+  if (!shopId || !status || typeof status !== "string") {
     return NextResponse.json({ error: "パラメータが不足しています" }, { status: 400 });
   }
 
@@ -22,8 +29,14 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "無効なステータスです" }, { status: 400 });
   }
 
+  // Service role クライアント（RLS バイパス：shops/seat_status 読み取り・更新用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // 店舗のオーナーであることを確認
-  const { data: shop } = await supabase
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("id")
     .eq("id", shopId)
@@ -33,12 +46,6 @@ export async function PATCH(request: Request) {
   if (!shop) {
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
-
-  // Service role クライアント（RLS バイパス）
-  const serviceSupabase = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
 
   // まず update を試行（updated_at はカラム存在不明のため status のみ）
   const { data: updated, error: updateError } = await serviceSupabase

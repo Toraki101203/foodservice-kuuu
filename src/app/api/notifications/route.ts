@@ -44,7 +44,14 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { ids } = await request.json();
+  let body: { ids?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+
+  const { ids } = body;
 
   let query = supabase
     .from("notifications")

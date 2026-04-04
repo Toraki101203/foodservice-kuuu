@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -30,8 +31,14 @@ export async function POST(request: Request) {
   }
   const { shopId } = body;
 
+  // Service role クライアント（RLS バイパス：shops/subscriptions/instagram_posts 読み取り用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // 所有権 + プレミアムプランチェック
-  const { data: shop } = await supabase
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("*, subscriptions(*)")
     .eq("id", shopId)
@@ -47,13 +54,13 @@ export async function POST(request: Request) {
 
   // Get recent analytics and posts in parallel
   const [{ data: events }, { data: posts }] = await Promise.all([
-    supabase
+    serviceSupabase
       .from("analytics_events")
       .select("*")
       .eq("shop_id", shopId)
       .order("created_at", { ascending: false })
       .limit(100),
-    supabase
+    serviceSupabase
       .from("instagram_posts")
       .select("*")
       .eq("shop_id", shopId)

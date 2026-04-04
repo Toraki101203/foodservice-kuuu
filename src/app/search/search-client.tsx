@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { ShopGridCard } from "@/components/discover/shop-grid-card";
 import { EmptyState } from "@/components/feed/empty-state";
@@ -48,10 +48,15 @@ export function SearchClient() {
     setIsLoading(true);
     setHasSearched(true);
 
-    const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
-    const data = await res.json();
-    setResults(data.shops ?? []);
-    setIsLoading(false);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
+      const data = await res.json();
+      setResults(data.shops ?? []);
+    } catch {
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -78,6 +83,27 @@ export function SearchClient() {
   const handleFilterToggle = (filter: FilterType) => {
     setActiveFilter((prev) => (prev === filter ? null : filter));
   };
+
+  // フィルターを適用した結果
+  const filteredResults = useMemo(() => {
+    if (!activeFilter) return results;
+
+    switch (activeFilter) {
+      case "available":
+        return results.filter((shop) => {
+          const seat = shop.seat_status?.[0];
+          return seat && seat.status === "available";
+        });
+      case "popular":
+        // 名前順（将来的に人気スコアで並べ替え）
+        return [...results].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+      case "distance":
+        // 現在位置情報なしのため元の順序を維持
+        return results;
+      default:
+        return results;
+    }
+  }, [results, activeFilter]);
 
   return (
     <div className="pb-20">
@@ -110,7 +136,7 @@ export function SearchClient() {
         <div className="px-4">
           {/* エリア */}
           <h2 className="mb-3 text-sm font-bold text-gray-900">エリアから探す</h2>
-          <div className="mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <div className="mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {AREAS.map((area) => (
               <button
                 key={area}
@@ -143,7 +169,7 @@ export function SearchClient() {
       {hasSearched && (
         <div>
           {/* フィルターバー */}
-          <div className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-none">
+          <div className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide">
             <button
               onClick={() => handleFilterToggle("available")}
               className={cn(
@@ -187,16 +213,16 @@ export function SearchClient() {
           )}
 
           {/* 検索結果 */}
-          {!isLoading && results.length > 0 && (
+          {!isLoading && filteredResults.length > 0 && (
             <div className="grid grid-cols-2 gap-3 px-4">
-              {results.map((shop) => (
+              {filteredResults.map((shop) => (
                 <ShopGridCard key={shop.id} shop={shop} />
               ))}
             </div>
           )}
 
           {/* 結果なし */}
-          {!isLoading && results.length === 0 && (
+          {!isLoading && filteredResults.length === 0 && (
             <EmptyState
               icon={<Search className="size-12" />}
               title="該当するお店が見つかりませんでした"

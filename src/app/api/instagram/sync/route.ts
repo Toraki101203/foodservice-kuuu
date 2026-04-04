@@ -14,7 +14,13 @@ export async function POST() {
     return NextResponse.json({ error: "未認証" }, { status: 401 });
   }
 
-  const { data: shop } = await supabase
+  // Service role クライアント（RLS バイパス：shops 読み取り + DB 書き込み用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: shop } = await serviceSupabase
     .from("shops")
     .select("*")
     .eq("owner_id", user.id)
@@ -28,12 +34,6 @@ export async function POST() {
       { status: 404 }
     );
   }
-
-  // DB 書き込みは service role で実行（RLS バイパス）
-  const serviceSupabase = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
 
   const result = await syncShopPosts(serviceSupabase, shop);
 

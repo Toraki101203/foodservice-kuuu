@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createNotification } from "@/lib/notifications";
 import { NextResponse } from "next/server";
 
@@ -12,7 +13,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { shopId } = await request.json();
+  let body: { shopId?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+
+  const { shopId } = body;
 
   if (!shopId) {
     return NextResponse.json(
@@ -47,10 +55,16 @@ export async function POST(request: Request) {
     );
   }
 
+  // Service role クライアント（RLS バイパス：shops 読み取り用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   // 店舗オーナーにフォロー通知を送信
   const [{ data: shop }, { data: profile }] = await Promise.all([
-    supabase.from("shops").select("owner_id, name").eq("id", shopId).single(),
-    supabase.from("profiles").select("display_name").eq("id", user.id).single(),
+    serviceSupabase.from("shops").select("owner_id, name").eq("id", shopId).single(),
+    serviceSupabase.from("profiles").select("display_name").eq("id", user.id).single(),
   ]);
 
   if (shop) {
@@ -77,7 +91,14 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { shopId } = await request.json();
+  let body: { shopId?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "無効なリクエストです" }, { status: 400 });
+  }
+
+  const { shopId } = body;
 
   if (!shopId) {
     return NextResponse.json(

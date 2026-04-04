@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { scoreNearby, getPostDistance, diversifyPosts, DISTANCE_TIERS, type GenrePreferences } from "@/lib/feed-scoring";
 import { formatDistance } from "@/lib/geo";
@@ -35,11 +35,16 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
+  // Service role クライアント（RLS バイパス：shops/instagram_posts/seat_status 読み取り用）
+  const serviceSupabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
   // 投稿を取得（30日以内、店舗・空席情報付き）
-  const { data: posts, error } = await supabase
+  const { data: posts, error } = await serviceSupabase
     .from("instagram_posts")
     .select("*, shop:shops(*, seat_status(*))")
     .gte("posted_at", thirtyDaysAgo)
@@ -59,12 +64,12 @@ export async function GET(request: NextRequest) {
   const sixHoursAgo = new Date(Date.now() - 6 * 3_600_000).toISOString();
 
   const [recentLikesResult, recentFollowsResult] = await Promise.all([
-    supabase
+    serviceSupabase
       .from("post_favorites")
       .select("post_id")
       .in("post_id", postIds)
       .gte("created_at", sixHoursAgo),
-    supabase
+    serviceSupabase
       .from("follows")
       .select("shop_id")
       .in("shop_id", shopIds)

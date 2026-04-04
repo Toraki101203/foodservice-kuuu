@@ -235,7 +235,8 @@ export function DashboardOverview({
               {recentPosts.map((post) => (
                 <a
                   key={post.id}
-                  href={post.permalink ?? "#"}
+                  href={post.permalink ?? undefined}
+                  onClick={(e) => { if (!post.permalink) e.preventDefault(); }}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="relative aspect-square overflow-hidden rounded-lg bg-gray-100"
@@ -248,7 +249,7 @@ export function DashboardOverview({
                     />
                   ) : (
                     <div className="flex size-full items-center justify-center text-xs text-gray-400">
-                      No Image
+                      画像なし
                     </div>
                   )}
                 </a>
