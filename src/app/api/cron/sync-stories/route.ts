@@ -9,9 +9,13 @@ import { NextResponse } from "next/server";
  * - 期限切れストーリーの削除
  */
 export async function GET(request: Request) {
-  // Cron シークレットによる認証
+  // Cron シークレットによる認証（未設定時は500エラー）
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,29 +24,36 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // 1. 期限切れストーリーを削除
+  // 1. 期限切れストーリーを削除（同一タイムスタンプで統一）
+  const expiredBefore = new Date().toISOString();
   const { data: expiredStories } = await supabase
     .from("instagram_stories")
     .select("id, shop_id, instagram_media_id, media_url")
-    .lt("expires_at", new Date().toISOString());
+    .lt("expires_at", expiredBefore);
 
   if (expiredStories && expiredStories.length > 0) {
-    // Storage からファイルを削除
-    const filePaths = expiredStories.map(
-      (s) => `stories/${s.shop_id}/${s.instagram_media_id}.jpg`
-    );
-    const videoFilePaths = expiredStories.map(
-      (s) => `stories/${s.shop_id}/${s.instagram_media_id}.mp4`
-    );
-    await supabase.storage
-      .from("shop-photos")
-      .remove([...filePaths, ...videoFilePaths]);
+    // Storage からファイルを削除（media_url からパスを抽出）
+    const storagePaths = expiredStories
+      .map((s) => {
+        try {
+          const url = new URL(s.media_url);
+          const match = url.pathname.match(/\/shop-photos\/(.+)$/);
+          return match ? match[1] : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter((p): p is string => p !== null);
+
+    if (storagePaths.length > 0) {
+      await supabase.storage.from("shop-photos").remove(storagePaths);
+    }
 
     // DB レコードを削除
     await supabase
       .from("instagram_stories")
       .delete()
-      .lt("expires_at", new Date().toISOString());
+      .lt("expires_at", expiredBefore);
   }
 
   // 2. 差分同期: stories_synced_at が15分以上前の Instagram 連携店舗を取得

@@ -50,12 +50,14 @@ export async function POST(request: NextRequest) {
 
     // Instagram Webhook のエントリを処理
     if (payload.entry && Array.isArray(payload.entry)) {
+      // エントリ数の上限（DoS 対策）
+      const entries = payload.entry.slice(0, 50);
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      for (const entry of payload.entry) {
+      for (const entry of entries) {
         const instagramUserId = entry.id;
 
         // ストーリー関連の変更を検出

@@ -154,15 +154,37 @@ export async function syncShopStories(supabase: SupabaseClient, shop: Shop) {
   }
 
   const now = new Date().toISOString();
+  const MAX_MEDIA_BYTES = 50 * 1024 * 1024; // 50MB
+  const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp", "video/mp4"];
   const records = [];
 
   for (const story of newStories) {
+    // story.id のバリデーション（パストラバーサル防止）
+    if (!/^\d+$/.test(story.id)) {
+      console.error("[Stories Sync] 不正な story.id:", story.id);
+      continue;
+    }
+
     let storedUrl = story.media_url;
 
     // Storage に保存（画像・動画ともに）
     try {
       const mediaRes = await fetch(story.media_url);
       if (mediaRes.ok) {
+        // サイズチェック（50MB上限）
+        const contentLength = Number(mediaRes.headers.get("content-length") ?? 0);
+        if (contentLength > MAX_MEDIA_BYTES) {
+          console.error("[Stories Sync] メディアが大きすぎます:", story.id, contentLength);
+          continue;
+        }
+
+        // Content-Type 検証
+        const contentType = mediaRes.headers.get("content-type") ?? "";
+        if (!ALLOWED_CONTENT_TYPES.some((t) => contentType.startsWith(t))) {
+          console.error("[Stories Sync] 不正な Content-Type:", story.id, contentType);
+          continue;
+        }
+
         const buffer = Buffer.from(await mediaRes.arrayBuffer());
         const ext = story.media_type === "VIDEO" ? "mp4" : "jpg";
         const filePath = `stories/${shop.id}/${story.id}.${ext}`;
@@ -171,7 +193,7 @@ export async function syncShopStories(supabase: SupabaseClient, shop: Shop) {
           .from("shop-photos")
           .upload(filePath, buffer, {
             upsert: true,
-            contentType: story.media_type === "VIDEO" ? "video/mp4" : "image/jpeg",
+            contentType: contentType || (story.media_type === "VIDEO" ? "video/mp4" : "image/jpeg"),
           });
 
         if (!uploadError) {
@@ -179,14 +201,19 @@ export async function syncShopStories(supabase: SupabaseClient, shop: Shop) {
             .from("shop-photos")
             .getPublicUrl(filePath);
           storedUrl = urlData.publicUrl;
+        } else {
+          console.error("[Stories Sync] Storage upload error:", story.id, uploadError.message);
         }
       }
-    } catch {
-      // Storage 保存失敗時は Instagram URL をフォールバック
+    } catch (err) {
+      console.error("[Stories Sync] メディア保存失敗:", story.id, err);
     }
 
-    const expiresAt = new Date(story.timestamp);
-    expiresAt.setHours(expiresAt.getHours() + 24);
+    // expires_at: timestamp + 24時間。ただし既に過ぎている場合は最低1時間の猶予
+    const computed = new Date(story.timestamp);
+    computed.setHours(computed.getHours() + 24);
+    const floor = new Date(Date.now() + 60 * 60 * 1000);
+    const expiresAt = computed > floor ? computed : floor;
 
     records.push({
       shop_id: shop.id,

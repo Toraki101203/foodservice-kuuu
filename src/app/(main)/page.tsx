@@ -31,7 +31,8 @@ export default async function HomePage() {
       .from("instagram_stories")
       .select("*, shop:shops(*, seat_status(*))")
       .gt("expires_at", now)
-      .order("timestamp", { ascending: false }),
+      .order("timestamp", { ascending: false })
+      .limit(100),
   ]);
 
   const followingIds = followsResult.data ?? [];
