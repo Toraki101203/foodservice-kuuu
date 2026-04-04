@@ -34,7 +34,7 @@ export default async function DashboardLayout({
 
   let { data: shop } = await serviceSupabase
     .from("shops")
-    .select("id, name, plan_type, main_image, genre, description, address, phone, budget_lunch_min, budget_lunch_max, budget_dinner_min, budget_dinner_max, business_hours, owner_id, instagram_username, instagram_user_id, instagram_url, instagram_synced_at, instagram_token_expires_at, latitude, longitude, is_verified, created_at")
+    .select("id, name, plan_type, main_image, genre, description, address, phone, budget_lunch_min, budget_lunch_max, budget_dinner_min, budget_dinner_max, business_hours, owner_id, instagram_username, instagram_user_id, instagram_url, instagram_synced_at, stories_synced_at, instagram_token_expires_at, latitude, longitude, is_verified, created_at")
     .eq("owner_id", user.id)
     .order("created_at", { ascending: true })
     .limit(1)

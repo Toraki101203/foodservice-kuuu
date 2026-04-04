@@ -94,6 +94,7 @@ export type Shop = {
   instagram_token_expires_at: string | null;
   instagram_user_id: string | null;
   instagram_synced_at: string | null;
+  stories_synced_at: string | null;
   created_at: string;
 };
 
