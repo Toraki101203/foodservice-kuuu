@@ -70,7 +70,11 @@ export function MypageClient({ profile }: { profile: Profile }) {
 
       {/* アプリ情報 */}
       <div className="mt-6 space-y-2 pb-8 text-center text-xs text-gray-400">
-        <p>利用規約 · プライバシーポリシー（準備中）</p>
+        <p>
+          <a href="/terms" className="hover:text-gray-500">利用規約</a>
+          {" · "}
+          <a href="/privacy" className="hover:text-gray-500">プライバシーポリシー</a>
+        </p>
         <p>Moguris v1.0.0</p>
       </div>
 

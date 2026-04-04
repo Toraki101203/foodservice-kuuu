@@ -96,13 +96,12 @@ export default function LoginPage() {
           </Link>
         </p>
         <p>
-          <button
-            type="button"
-            className="text-gray-400 cursor-not-allowed"
-            disabled
+          <Link
+            href="/reset-password"
+            className="text-gray-500 hover:text-gray-700"
           >
-            パスワードを忘れた方（準備中）
-          </button>
+            パスワードを忘れた方
+          </Link>
         </p>
       </div>
     </div>

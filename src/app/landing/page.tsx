@@ -181,12 +181,12 @@ export default function LandingPage() {
             <Link href="/login" className="hover:text-gray-700">
               ログイン
             </Link>
-            <span className="text-gray-400 cursor-default">
-              利用規約（準備中）
-            </span>
-            <span className="text-gray-400 cursor-default">
-              プライバシーポリシー（準備中）
-            </span>
+            <Link href="/terms" className="hover:text-gray-700">
+              利用規約
+            </Link>
+            <Link href="/privacy" className="hover:text-gray-700">
+              プライバシーポリシー
+            </Link>
           </nav>
           <p className="text-xs text-gray-400">
             &copy; {new Date().getFullYear()} Moguris. All rights reserved.
